@@ -1,0 +1,56 @@
+{
+  "id": "sun-value-changed",
+  "title": {
+    "en": "Sun value changed"
+  },
+  "titleFormatted": {
+    "en": "Sun value changed ([[startTime]] – [[endTime]], [[direction]])"
+  },
+  "args": [
+    {
+      "name": "startTime",
+      "type": "time",
+      "title": {
+        "en": "Start time"
+      }
+    },
+    {
+      "name": "endTime",
+      "type": "time",
+      "title": {
+        "en": "End time"
+      }
+    },
+    {
+      "name": "direction",
+      "type": "dropdown",
+      "title": {
+        "en": "Direction"
+      },
+      "values": [
+        {
+          "id": "down",
+          "title": {
+            "en": "Down (100.0% to 0.0%)"
+          }
+        },
+        {
+          "id": "up",
+          "title": {
+            "en": "Up (0.0% to 100.0%)"
+          }
+        }
+      ]
+    }
+  ],
+  "tokens": [
+    {
+      "name": "value",
+      "type": "number",
+      "title": {
+        "en": "Value (%)"
+      },
+      "example": 75.0
+    }
+  ]
+}
