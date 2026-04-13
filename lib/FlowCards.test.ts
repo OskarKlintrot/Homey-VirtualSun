@@ -48,4 +48,21 @@ describe("flow cards", () => {
     expect(valueToken).toBeDefined();
     expect(valueToken.type).toBe("number");
   });
+
+  it("get-ramp-value has ramp picker and value token", () => {
+    const card = readJson(".homeycompose/flow/actions/get-ramp-value.json");
+
+    expect(card.id).toBe("get-ramp-value");
+    expect(card.titleFormatted.en).toContain("[[rampName]]");
+
+    const rampArg = card.args.find((arg: any) => arg.name === "rampName");
+    expect(rampArg).toBeDefined();
+    expect(rampArg.type).toBe("autocomplete");
+
+    expect(Array.isArray(card.tokens)).toBe(true);
+    const valueToken = card.tokens.find((token: any) => token.name === "value");
+    expect(valueToken).toBeDefined();
+    expect(valueToken.type).toBe("number");
+  });
 });
+

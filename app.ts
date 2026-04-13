@@ -7,7 +7,7 @@ import {
   parseTimeToMinutes,
   SunDirection,
 } from "./lib/SunValue.ts";
-import { rampValueToRange } from "./lib/Ramp.ts";
+import { rampValueToRange, snapPercentageToStep } from "./lib/Ramp.ts";
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -72,19 +72,6 @@ module.exports = class VSun extends Homey.App {
     const progress = elapsed / ramp.durationMs;
     const raw = ramp.direction === "up" ? progress * 100 : (1 - progress) * 100;
     return Math.round(raw * 10) / 10;
-  }
-
-  _snapPercentageToStep(value: number, direction: SunDirection, step: number): number {
-    const clamped = Math.min(100, Math.max(0, value));
-    const safeStep = step > 0 ? step : 1;
-    const epsilon = 1e-9;
-
-    const snapped = direction === "up"
-      ? Math.floor((clamped + epsilon) / safeStep) * safeStep
-      : 100 - Math.floor(((100 - clamped) + epsilon) / safeStep) * safeStep;
-
-    const clampedSnapped = Math.min(100, Math.max(0, snapped));
-    return Math.round(clampedSnapped * 10) / 10;
   }
 
   getActiveRamps(): ActiveRampInfo[] {
@@ -373,7 +360,7 @@ module.exports = class VSun extends Homey.App {
           continue;
         }
 
-        const steppedPercentage = this._snapPercentageToStep(
+        const steppedPercentage = snapPercentageToStep(
           percentage,
           direction,
           normalized.step,
@@ -550,7 +537,7 @@ module.exports = class VSun extends Homey.App {
 
         const id = String(++this._rampIdCounter);
         const initialPercentage = direction === "up" ? 0 : 100;
-        const steppedInitialPercentage = this._snapPercentageToStep(initialPercentage, direction, step);
+        const steppedInitialPercentage = snapPercentageToStep(initialPercentage, direction, step);
 
         this._activeRamps.set(id, {
           name: rampName,
@@ -587,7 +574,7 @@ module.exports = class VSun extends Homey.App {
         }
 
         const last = ramp.lastPercentage;
-        const steppedPercentage = this._snapPercentageToStep(
+        const steppedPercentage = snapPercentageToStep(
           percentage,
           ramp.direction,
           ramp.step,
@@ -653,7 +640,12 @@ module.exports = class VSun extends Homey.App {
               percentage = Math.round(raw * 10) / 10;
             }
 
-            return { value: percentage };
+            const steppedPercentage = snapPercentageToStep(
+              percentage,
+              ramp.direction,
+              ramp.step,
+            );
+            return { value: steppedPercentage };
           }
         }
 
