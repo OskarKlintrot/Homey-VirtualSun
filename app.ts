@@ -73,6 +73,19 @@ module.exports = class VSun extends Homey.App {
     return Math.round(raw * 10) / 10;
   }
 
+  _snapPercentageToStep(value: number, direction: SunDirection, step: number): number {
+    const clamped = Math.min(100, Math.max(0, value));
+    const safeStep = step > 0 ? step : 1;
+    const epsilon = 1e-9;
+
+    const snapped = direction === "up"
+      ? Math.floor((clamped + epsilon) / safeStep) * safeStep
+      : 100 - Math.floor(((100 - clamped) + epsilon) / safeStep) * safeStep;
+
+    const clampedSnapped = Math.min(100, Math.max(0, snapped));
+    return Math.round(clampedSnapped * 10) / 10;
+  }
+
   getActiveRamps(): ActiveRampInfo[] {
     const now = Date.now();
 
@@ -358,15 +371,21 @@ module.exports = class VSun extends Homey.App {
           continue;
         }
 
+        const steppedPercentage = this._snapPercentageToStep(
+          percentage,
+          direction,
+          normalized.step,
+        );
+
         if (
           last === null ||
           last === undefined ||
-          Math.abs(percentage - last) >= normalized.step
+          steppedPercentage !== last
         ) {
-          this._sunValueLastPercentage.set(key, percentage);
+          this._sunValueLastPercentage.set(key, steppedPercentage);
           try {
             await triggerCard.trigger(
-              { value: percentage },
+              { value: steppedPercentage },
               {
                 startMinutes: normalized.startMinutes,
                 endMinutes: normalized.endMinutes,
@@ -540,12 +559,16 @@ module.exports = class VSun extends Homey.App {
         }
 
         const last = ramp.lastPercentage;
-        const diff = last === null ? Infinity : Math.abs(percentage - last);
-        const shouldFire = last === null || diff >= ramp.step || (expired && last !== percentage);
+        const steppedPercentage = this._snapPercentageToStep(
+          percentage,
+          ramp.direction,
+          ramp.step,
+        );
+        const shouldFire = last === null || steppedPercentage !== last;
         if (shouldFire) {
-          ramp.lastPercentage = percentage;
+          ramp.lastPercentage = steppedPercentage;
           try {
-            await triggerCard.trigger({ value: percentage }, { rampName: ramp.name });
+            await triggerCard.trigger({ value: steppedPercentage }, { rampName: ramp.name });
           } catch (err) {
             this.error("Ramp trigger dispatch failed", err);
           }
