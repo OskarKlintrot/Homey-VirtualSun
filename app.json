@@ -107,10 +107,10 @@
       {
         "id": "ramp-value-integer",
         "title": {
-          "en": "Ramp value from 100->0 to x->y (only on change)"
+          "en": "Convert value from 100->0 to x->y"
         },
         "titleFormatted": {
-          "en": "Ramp [[input]]% to integer between [[x]] and [[y]]"
+          "en": "Convert [[input]]% to integer between [[x]] and [[y]]"
         },
         "args": [
           {
@@ -120,7 +120,7 @@
               "en": "Input value (%)"
             },
             "placeholder": {
-              "en": "Use the trigger token Value (%)"
+              "en": "Flow tag, token, variable etc (%)"
             }
           },
           {
@@ -149,7 +149,7 @@
             "name": "ramped",
             "type": "number",
             "title": {
-              "en": "Mapped Value (%)"
+              "en": "Converted Value (%)"
             },
             "example": 42
           }
