@@ -4,7 +4,7 @@
     "en": "Sun value changed"
   },
   "titleFormatted": {
-    "en": "Sun value changed ([[startTime]] – [[endTime]], [[direction]])"
+    "en": "Sun value changed ([[startTime]] – [[endTime]], [[direction]], step [[step]]%)"
   },
   "args": [
     {
@@ -41,6 +41,20 @@
           }
         }
       ]
+    },
+    {
+      "name": "step",
+      "type": "number",
+      "title": {
+        "en": "Step (%)"
+      },
+      "value": 1,
+      "min": 0.1,
+      "max": 100,
+      "step": 0.1,
+      "placeholder": {
+        "en": "1"
+      }
     }
   ],
   "tokens": [

@@ -14,7 +14,7 @@
     "en": "Virtual Sun"
   },
   "description": {
-    "en": "Adds support for MyBrand devices."
+    "en": "Virtual sun automation."
   },
   "category": [
     "tools"
@@ -38,7 +38,7 @@
           "en": "Sun value changed"
         },
         "titleFormatted": {
-          "en": "Sun value changed ([[startTime]] – [[endTime]], [[direction]])"
+          "en": "Sun value changed ([[startTime]] – [[endTime]], [[direction]], step [[step]]%)"
         },
         "args": [
           {
@@ -75,6 +75,20 @@
                 }
               }
             ]
+          },
+          {
+            "name": "step",
+            "type": "number",
+            "title": {
+              "en": "Step (%)"
+            },
+            "value": 1,
+            "min": 0.1,
+            "max": 100,
+            "step": 0.1,
+            "placeholder": {
+              "en": "1"
+            }
           }
         ],
         "tokens": [
@@ -85,6 +99,59 @@
               "en": "Value (%)"
             },
             "example": 75
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "ramp-value-integer",
+        "title": {
+          "en": "Ramp value from 100->0 to x->y (only on change)"
+        },
+        "titleFormatted": {
+          "en": "Ramp [[input]]% to integer between [[x]] and [[y]]"
+        },
+        "args": [
+          {
+            "name": "input",
+            "type": "number",
+            "title": {
+              "en": "Input value (%)"
+            },
+            "placeholder": {
+              "en": "Use the trigger token Value (%)"
+            }
+          },
+          {
+            "name": "x",
+            "type": "number",
+            "title": {
+              "en": "X at 100% (integer)"
+            },
+            "placeholder": {
+              "en": "60"
+            }
+          },
+          {
+            "name": "y",
+            "type": "number",
+            "title": {
+              "en": "Y at 0% (integer)"
+            },
+            "placeholder": {
+              "en": "20"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "ramped",
+            "type": "number",
+            "title": {
+              "en": "Mapped Value (%)"
+            },
+            "example": 42
           }
         ]
       }

@@ -1,0 +1,51 @@
+{
+  "id": "ramp-value-integer",
+  "title": {
+    "en": "Ramp value from 100->0 to x->y (only on change)"
+  },
+  "titleFormatted": {
+    "en": "Ramp [[input]]% to integer between [[x]] and [[y]]"
+  },
+  "args": [
+    {
+      "name": "input",
+      "type": "number",
+      "title": {
+        "en": "Input value (%)"
+      },
+      "placeholder": {
+        "en": "Use the trigger token Value (%)"
+      }
+    },
+    {
+      "name": "x",
+      "type": "number",
+      "title": {
+        "en": "X at 100% (integer)"
+      },
+      "placeholder": {
+        "en": "60"
+      }
+    },
+    {
+      "name": "y",
+      "type": "number",
+      "title": {
+        "en": "Y at 0% (integer)"
+      },
+      "placeholder": {
+        "en": "20"
+      }
+    }
+  ],
+  "tokens": [
+    {
+      "name": "ramped",
+      "type": "number",
+      "title": {
+        "en": "Mapped Value (%)"
+      },
+      "example": 42
+    }
+  ]
+}
