@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+    <style>
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .muted {
+        color: #666;
+        margin-bottom: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+        vertical-align: middle;
+      }
+
+      .empty {
+        padding: 12px;
+        border: 1px dashed #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="homey-header">
+      <h1 class="homey-title">Virtual Sun Ramps</h1>
+      <p class="homey-subtitle">See and stop active named ramps.</p>
+    </header>
+
+    <div class="toolbar">
+      <button id="refresh" class="homey-button-secondary">Refresh</button>
+      <button id="stopAll" class="homey-button-danger">Stop all</button>
+    </div>
+
+    <p id="status" class="muted">Loading...</p>
+    <div id="content"></div>
+
+    <script type="text/javascript">
+      function fmtSeconds(totalSeconds) {
+        var s = Math.max(0, Number(totalSeconds) || 0);
+        var mins = Math.floor(s / 60);
+        var secs = s % 60;
+        return mins + "m " + String(secs).padStart(2, "0") + "s";
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function onHomeyReady(Homey) {
+        var contentEl = document.getElementById("content");
+        var statusEl = document.getElementById("status");
+        var refreshBtn = document.getElementById("refresh");
+        var stopAllBtn = document.getElementById("stopAll");
+
+        function setStatus(text) {
+          statusEl.textContent = text;
+        }
+
+        function stopRamp(name) {
+          Homey.api("DELETE", "/ramps/" + encodeURIComponent(name), null, function (err, result) {
+            if (err) return Homey.alert(err.message || String(err));
+            if (!result || !result.stopped) {
+              return Homey.alert("Ramp was not active.");
+            }
+            loadRamps();
+          });
+        }
+
+        function render(ramps) {
+          if (!Array.isArray(ramps) || ramps.length === 0) {
+            contentEl.innerHTML = '<div class="empty">No active ramps.</div>';
+            return;
+          }
+
+          var rows = ramps
+            .map(function (ramp) {
+              var name = escapeHtml(ramp.name);
+              var direction = escapeHtml(ramp.direction);
+              var step = Number(ramp.step).toFixed(1);
+              var value = Number(ramp.value).toFixed(1);
+              var elapsed = fmtSeconds(ramp.elapsedSeconds);
+              var remaining = fmtSeconds(ramp.remainingSeconds);
+
+              return (
+                "<tr>" +
+                "<td>" + name + "</td>" +
+                "<td>" + direction + "</td>" +
+                "<td>" + value + "%</td>" +
+                "<td>" + step + " pp</td>" +
+                "<td>" + elapsed + "</td>" +
+                "<td>" + remaining + "</td>" +
+                "<td><button class=\"homey-button-danger\" data-stop=\"" + name + "\">Stop</button></td>" +
+                "</tr>"
+              );
+            })
+            .join("");
+
+          contentEl.innerHTML =
+            "<table>" +
+            "<thead><tr><th>Name</th><th>Direction</th><th>Value</th><th>Step</th><th>Elapsed</th><th>Remaining</th><th></th></tr></thead>" +
+            "<tbody>" + rows + "</tbody>" +
+            "</table>";
+
+          contentEl.querySelectorAll("button[data-stop]").forEach(function (button) {
+            button.addEventListener("click", function () {
+              stopRamp(button.getAttribute("data-stop"));
+            });
+          });
+        }
+
+        function loadRamps() {
+          setStatus("Loading...");
+          Homey.api("GET", "/ramps", null, function (err, result) {
+            if (err) return Homey.alert(err.message || String(err));
+
+            var ramps = (result && result.ramps) || [];
+            render(ramps);
+            setStatus("Active ramps: " + ramps.length);
+          });
+        }
+
+        refreshBtn.addEventListener("click", loadRamps);
+
+        stopAllBtn.addEventListener("click", function () {
+          Homey.api("DELETE", "/ramps-stop-all", null, function (err, result) {
+            if (err) return Homey.alert(err.message || String(err));
+            var count = (result && result.stoppedCount) || 0;
+            setStatus("Stopped ramps: " + count);
+            loadRamps();
+          });
+        });
+
+        loadRamps();
+        Homey.ready();
+      }
+    </script>
+  </body>
+</html>

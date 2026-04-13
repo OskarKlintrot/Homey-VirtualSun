@@ -1,0 +1,31 @@
+{
+  "id": "sun-ramp-value-changed",
+  "title": {
+    "en": "Sun ramp changed"
+  },
+  "titleFormatted": {
+    "en": "Sun ramp [[rampName]] changes"
+  },
+  "args": [
+    {
+      "name": "rampName",
+      "type": "autocomplete",
+      "title": {
+        "en": "Ramp"
+      },
+      "placeholder": {
+        "en": "Pick a ramp"
+      }
+    }
+  ],
+  "tokens": [
+    {
+      "name": "value",
+      "type": "number",
+      "title": {
+        "en": "Value (%)"
+      },
+      "example": 75.0
+    }
+  ]
+}

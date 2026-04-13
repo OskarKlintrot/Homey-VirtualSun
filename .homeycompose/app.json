@@ -28,5 +28,19 @@
     "name": "Oskar Klintrot",
     "email": "oskar.klintrot@gmail.com"
   },
-  "support": "mailto:oskar.klintrot@gmail.com"
+  "support": "mailto:oskar.klintrot@gmail.com",
+  "api": {
+    "getActiveRamps": {
+      "method": "GET",
+      "path": "/ramps"
+    },
+    "stopRamp": {
+      "method": "DELETE",
+      "path": "/ramps/:name"
+    },
+    "stopAllRamps": {
+      "method": "DELETE",
+      "path": "/ramps-stop-all"
+    }
+  }
 }

@@ -1,24 +1,33 @@
 {
-  "id": "sun-value-changed",
+  "id": "sun-ramp-start",
   "title": {
-    "en": "Virtual sun value changed"
+    "en": "Virtual sun start"
   },
   "titleFormatted": {
-    "en": "Virtual sun changes [[startTime]]–[[endTime]] • [[direction]] • [[step]] pp/step"
+    "en": "Virtual sun [[rampName]] • [[duration]] min • [[direction]] • [[step]] pp/step"
   },
   "args": [
     {
-      "name": "startTime",
-      "type": "time",
+      "name": "rampName",
+      "type": "autocomplete",
       "title": {
-        "en": "Start time"
+        "en": "Ramp name"
+      },
+      "placeholder": {
+        "en": "morning-livingroom"
       }
     },
     {
-      "name": "endTime",
-      "type": "time",
+      "name": "duration",
+      "type": "number",
       "title": {
-        "en": "End time"
+        "en": "Duration (minutes)"
+      },
+      "min": 1,
+      "max": 1440,
+      "step": 1,
+      "placeholder": {
+        "en": "60"
       }
     },
     {
@@ -55,16 +64,6 @@
       "placeholder": {
         "en": "1"
       }
-    }
-  ],
-  "tokens": [
-    {
-      "name": "value",
-      "type": "number",
-      "title": {
-        "en": "Value (%)"
-      },
-      "example": 75.0
     }
   ]
 }
