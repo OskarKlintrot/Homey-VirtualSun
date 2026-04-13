@@ -1,0 +1,31 @@
+{
+  "id": "get-ramp-value",
+  "title": {
+    "en": "Get virtual sun value"
+  },
+  "titleFormatted": {
+    "en": "Get value of virtual sun [[rampName]]"
+  },
+  "args": [
+    {
+      "name": "rampName",
+      "type": "autocomplete",
+      "title": {
+        "en": "Virtual sun name"
+      },
+      "placeholder": {
+        "en": "morning-livingroom"
+      }
+    }
+  ],
+  "tokens": [
+    {
+      "name": "value",
+      "type": "number",
+      "title": {
+        "en": "Value (%)"
+      },
+      "example": 75.0
+    }
+  ]
+}

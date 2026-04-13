@@ -48,6 +48,7 @@ module.exports = class VSun extends Homey.App {
   private _pollTimer: NodeJS.Timeout | null = null;
   private _timeZone: string | undefined;
   private _activeRamps: Map<string, SunRamp> = new Map();
+  private _completedRamps: Map<string, number> = new Map();
   private _knownRampNames: Set<string> = new Set();
   private _rampIdCounter: number = 0;
   private _rampPollTimer: NodeJS.Timeout | null = null;
@@ -274,6 +275,7 @@ module.exports = class VSun extends Homey.App {
     this._initSunValueTrigger();
     this._initRampAction();
     this._initSunRamp();
+    this._initGetRampValue();
   }
 
   async onUninit() {
@@ -429,43 +431,60 @@ module.exports = class VSun extends Homey.App {
     );
   }
 
+  async _collectRampNames(): Promise<string[]> {
+    const names = new Set<string>(this._knownRampNames);
+
+    for (const ramp of this._activeRamps.values()) {
+      names.add(ramp.name);
+    }
+
+    try {
+      const triggerCard = this.homey.flow.getTriggerCard("sun-ramp-value-changed");
+      const triggerArgs = (await triggerCard.getArgumentValues()) as Array<{ rampName?: unknown }>;
+      for (const args of triggerArgs) {
+        const name = this._parseRampName(args.rampName);
+        if (name !== null) {
+          names.add(name);
+        }
+      }
+    } catch (err) {
+      this.error("Failed to read sun-ramp-value-changed arguments", err);
+    }
+
+    try {
+      const startCard = this.homey.flow.getActionCard("sun-ramp-start");
+      const startArgs = (await startCard.getArgumentValues()) as Array<{ rampName?: unknown }>;
+      for (const args of startArgs) {
+        const name = this._parseRampName(args.rampName);
+        if (name !== null) {
+          names.add(name);
+        }
+      }
+    } catch (err) {
+      this.error("Failed to read sun-ramp-start arguments", err);
+    }
+
+    try {
+      const getRampCard = this.homey.flow.getActionCard("get-ramp-value");
+      const getRampArgs = (await getRampCard.getArgumentValues()) as Array<{ rampName?: unknown }>;
+      for (const args of getRampArgs) {
+        const name = this._parseRampName(args.rampName);
+        if (name !== null) {
+          names.add(name);
+        }
+      }
+    } catch (err) {
+      this.error("Failed to read get-ramp-value arguments", err);
+    }
+
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }
+
   _initSunRamp() {
     const triggerCard = this.homey.flow.getTriggerCard("sun-ramp-value-changed");
     const actionCard = this.homey.flow.getActionCard("sun-ramp-start");
 
-    const collectRampNames = async (): Promise<string[]> => {
-      const names = new Set<string>(this._knownRampNames);
-
-      for (const ramp of this._activeRamps.values()) {
-        names.add(ramp.name);
-      }
-
-      try {
-        const actionArgs = (await actionCard.getArgumentValues()) as Array<{ rampName?: unknown }>;
-        for (const args of actionArgs) {
-          const name = this._parseRampName(args.rampName);
-          if (name !== null) {
-            names.add(name);
-          }
-        }
-      } catch (err) {
-        this.error("Failed to read sun-ramp-start arguments", err);
-      }
-
-      try {
-        const triggerArgs = (await triggerCard.getArgumentValues()) as Array<{ rampName?: unknown }>;
-        for (const args of triggerArgs) {
-          const name = this._parseRampName(args.rampName);
-          if (name !== null) {
-            names.add(name);
-          }
-        }
-      } catch (err) {
-        this.error("Failed to read sun-ramp-value-changed arguments", err);
-      }
-
-      return Array.from(names).sort((a, b) => a.localeCompare(b));
-    };
+    const collectRampNames = () => this._collectRampNames();
 
     const toAutocompleteResults = async (query: string, includeCreateOption: boolean) => {
       const normalizedQuery = query.trim().toLowerCase();
@@ -575,6 +594,7 @@ module.exports = class VSun extends Homey.App {
         }
 
         if (expired) {
+          this._completedRamps.set(ramp.name, percentage);
           this._activeRamps.delete(id);
         }
       }
@@ -585,5 +605,57 @@ module.exports = class VSun extends Homey.App {
         this.error("Unhandled ramp polling error", err);
       });
     }, POLL_INTERVAL_MS);
+  }
+
+  _initGetRampValue() {
+    const actionCard = this.homey.flow.getActionCard("get-ramp-value");
+
+    actionCard.registerArgumentAutocompleteListener("rampName", async (query: string) => {
+      const normalizedQuery = query.trim().toLowerCase();
+      const names = await this._collectRampNames();
+      const matchingNames = names
+        .filter((name) => normalizedQuery === "" || name.toLowerCase().includes(normalizedQuery))
+        .map((name) => ({
+          id: name,
+          name,
+        }));
+
+      return matchingNames;
+    });
+
+    actionCard.registerRunListener(
+      async (args: { rampName?: unknown }) => {
+        const rampName = this._toRampName(args.rampName);
+        const rampId = this._findActiveRampIdByName(rampName);
+
+        // If ramp is active, calculate its current value
+        if (rampId !== null) {
+          const ramp = this._activeRamps.get(rampId);
+          if (ramp) {
+            const now = Date.now();
+            const elapsed = Math.max(0, now - ramp.startTime);
+            let percentage: number;
+
+            if (elapsed >= ramp.durationMs) {
+              percentage = ramp.direction === "up" ? 100 : 0;
+            } else {
+              const progress = elapsed / ramp.durationMs;
+              const raw = ramp.direction === "up" ? progress * 100 : (1 - progress) * 100;
+              percentage = Math.round(raw * 10) / 10;
+            }
+
+            return { value: percentage };
+          }
+        }
+
+        // If ramp is not active, check if it has completed
+        const completedValue = this._completedRamps.get(rampName);
+        if (completedValue !== undefined) {
+          return { value: completedValue };
+        }
+
+        throw new Error(`Ramp "${rampName}" is not found or not started`);
+      },
+    );
   }
 };
