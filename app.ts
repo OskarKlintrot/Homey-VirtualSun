@@ -30,6 +30,17 @@ interface ActiveRampInfo {
   value: number;
 }
 
+interface SunValueConfigInfo {
+  startTime: string;
+  endTime: string;
+  direction: SunDirection;
+  step: number;
+  activeNow: boolean;
+  currentValue: number | null;
+  lastTriggeredValue: number | null;
+  nextTriggerSeconds: number | null;
+}
+
 const CREATE_PREFIX = "__create__:";
 
 module.exports = class VSun extends Homey.App {
@@ -104,6 +115,79 @@ module.exports = class VSun extends Homey.App {
     return count;
   }
 
+  _formatMinutesToTime(minutes: number): string {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+
+  _intervalDurationMinutes(startMinutes: number, endMinutes: number): number {
+    return endMinutes > startMinutes
+      ? endMinutes - startMinutes
+      : (24 * 60 - startMinutes) + endMinutes;
+  }
+
+  async getSunValueConfigurations(): Promise<SunValueConfigInfo[]> {
+    const triggerCard = this.homey.flow.getTriggerCard("sun-value-changed");
+    const now = new Date();
+    const allArgs = (await triggerCard.getArgumentValues()) as Array<{
+      startTime: unknown;
+      endTime: unknown;
+      direction?: unknown;
+      step?: unknown;
+    }>;
+
+    return allArgs
+      .map((args) => {
+        const normalized = this._normalizeFlowArgs(args);
+        if (!normalized) {
+          return null;
+        }
+
+        const currentValue = computeSunValue(
+          now,
+          args.startTime,
+          args.endTime,
+          normalized.direction,
+          this._timeZone,
+        );
+        const lastTriggeredValue = this._sunValueLastPercentage.get(normalized.key) ?? null;
+        const durationMinutes = this._intervalDurationMinutes(
+          normalized.startMinutes,
+          normalized.endMinutes,
+        );
+        const ratePerSecond = 100 / (durationMinutes * 60);
+        const diffSinceLast =
+          currentValue === null || lastTriggeredValue === null
+            ? 0
+            : Math.abs(currentValue - lastTriggeredValue);
+        const remainingToStep = Math.max(0, normalized.step - diffSinceLast);
+        const nextTriggerSeconds =
+          currentValue === null
+            ? null
+            : lastTriggeredValue === null
+              ? 0
+              : remainingToStep <= 0
+                ? 0
+                : Math.ceil(remainingToStep / ratePerSecond);
+
+        return {
+          startTime: this._formatMinutesToTime(normalized.startMinutes),
+          endTime: this._formatMinutesToTime(normalized.endMinutes),
+          direction: normalized.direction,
+          step: normalized.step,
+          activeNow: currentValue !== null,
+          currentValue,
+          lastTriggeredValue,
+          nextTriggerSeconds,
+          sortKey: normalized.startMinutes,
+        };
+      })
+      .filter((item): item is SunValueConfigInfo & { sortKey: number } => item !== null)
+      .sort((a, b) => a.sortKey - b.sortKey)
+      .map(({ sortKey: _sortKey, ...item }) => item);
+  }
+
   _parseRampName(value: unknown): string | null {
     if (typeof value === "string" && value.trim() !== "") {
       const trimmed = value.trim();
@@ -154,7 +238,8 @@ module.exports = class VSun extends Homey.App {
     }
 
     const direction = normalizeDirection(args.direction);
-    const step = typeof args.step === "number" && args.step > 0 ? args.step : 1;
+    const rawStep = Number(args.step);
+    const step = rawStep > 0 ? rawStep : 1;
     const key = `${startMinutes}|${endMinutes}|${direction}|${step}`;
 
     return {
@@ -421,10 +506,7 @@ module.exports = class VSun extends Homey.App {
         const step = rawStep > 0 ? rawStep : 1;
         this._knownRampNames.add(rampName);
 
-        this.log(`[sun-ramp] Start requested: name="${rampName}", duration=${durationMinutes}min, direction=${direction}, step=${step} (raw: ${JSON.stringify(args.step)})`);
-
         if (this._findActiveRampIdByName(rampName) !== null) {
-          this.log(`[sun-ramp] Ignoring duplicate start for "${rampName}" (already running).`);
           return true;
         }
 
@@ -461,7 +543,6 @@ module.exports = class VSun extends Homey.App {
         const diff = last === null ? Infinity : Math.abs(percentage - last);
         const shouldFire = last === null || diff >= ramp.step || (expired && last !== percentage);
         if (shouldFire) {
-          this.log(`[sun-ramp] Trigger "${ramp.name}": value=${percentage}, last=${last}, step=${ramp.step}, diff=${diff === Infinity ? "first" : diff.toFixed(2)}`);
           ramp.lastPercentage = percentage;
           try {
             await triggerCard.trigger({ value: percentage }, { rampName: ramp.name });

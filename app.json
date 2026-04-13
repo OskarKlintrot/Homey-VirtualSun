@@ -35,6 +35,10 @@
       "method": "GET",
       "path": "/ramps"
     },
+    "getSunValueConfigurations": {
+      "method": "GET",
+      "path": "/sun-value-configurations"
+    },
     "stopRamp": {
       "method": "DELETE",
       "path": "/ramps/:name"

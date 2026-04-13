@@ -7,6 +7,12 @@ module.exports = {
     };
   },
 
+  async getSunValueConfigurations({ homey }) {
+    return {
+      configurations: await homey.app.getSunValueConfigurations(),
+    };
+  },
+
   async stopRamp({ homey, params }) {
     const decodedName = decodeURIComponent(params.name || "");
     const stopped = homey.app.stopRampByName(decodedName);

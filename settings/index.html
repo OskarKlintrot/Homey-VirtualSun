@@ -33,12 +33,16 @@
         padding: 12px;
         border: 1px dashed #ccc;
       }
+
+      .section-title {
+        margin: 16px 0 8px;
+      }
     </style>
   </head>
   <body>
     <header class="homey-header">
-      <h1 class="homey-title">Virtual Sun Ramps</h1>
-      <p class="homey-subtitle">See and stop active named ramps.</p>
+      <h1 class="homey-title">Virtual Sun</h1>
+      <p class="homey-subtitle">See active ramps and configured sun rules.</p>
     </header>
 
     <div class="toolbar">
@@ -47,7 +51,10 @@
     </div>
 
     <p id="status" class="muted">Loading...</p>
+  <h2 class="section-title">Active ramps</h2>
     <div id="content"></div>
+  <h2 class="section-title">Sun value configurations</h2>
+  <div id="sunConfigs"></div>
 
     <script type="text/javascript">
       function fmtSeconds(totalSeconds) {
@@ -68,9 +75,12 @@
 
       function onHomeyReady(Homey) {
         var contentEl = document.getElementById("content");
+        var sunConfigsEl = document.getElementById("sunConfigs");
         var statusEl = document.getElementById("status");
         var refreshBtn = document.getElementById("refresh");
         var stopAllBtn = document.getElementById("stopAll");
+        var refreshIntervalId = null;
+        var isLoading = false;
 
         function setStatus(text) {
           statusEl.textContent = text;
@@ -82,11 +92,11 @@
             if (!result || !result.stopped) {
               return Homey.alert("Ramp was not active.");
             }
-            loadRamps();
+            loadAll();
           });
         }
 
-        function render(ramps) {
+        function renderRamps(ramps) {
           if (!Array.isArray(ramps) || ramps.length === 0) {
             contentEl.innerHTML = '<div class="empty">No active ramps.</div>';
             return;
@@ -128,29 +138,112 @@
           });
         }
 
-        function loadRamps() {
+        function renderSunConfigurations(configurations) {
+          if (!Array.isArray(configurations) || configurations.length === 0) {
+            sunConfigsEl.innerHTML = '<div class="empty">No configured sun value rules.</div>';
+            return;
+          }
+
+          var rows = configurations
+            .map(function (config) {
+              var startTime = escapeHtml(config.startTime);
+              var endTime = escapeHtml(config.endTime);
+              var direction = escapeHtml(config.direction);
+              var step = Number(config.step).toFixed(1);
+              var activeNow = config.activeNow ? "Yes" : "No";
+              var currentValue =
+                config.currentValue === null || config.currentValue === undefined
+                  ? "-"
+                  : Number(config.currentValue).toFixed(1) + "%";
+              var lastTriggeredValue =
+                config.lastTriggeredValue === null || config.lastTriggeredValue === undefined
+                  ? "-"
+                  : Number(config.lastTriggeredValue).toFixed(1) + "%";
+              var nextTrigger =
+                config.nextTriggerSeconds === null || config.nextTriggerSeconds === undefined
+                  ? "-"
+                  : Number(config.nextTriggerSeconds) <= 0
+                    ? "now"
+                    : Math.round(Number(config.nextTriggerSeconds)) + "s";
+
+              return (
+                "<tr>" +
+                "<td>" + startTime + "</td>" +
+                "<td>" + endTime + "</td>" +
+                "<td>" + direction + "</td>" +
+                "<td>" + step + " pp</td>" +
+                "<td>" + activeNow + "</td>" +
+                "<td>" + currentValue + "</td>" +
+                "<td>" + lastTriggeredValue + "</td>" +
+                "<td>" + nextTrigger + "</td>" +
+                "</tr>"
+              );
+            })
+            .join("");
+
+          sunConfigsEl.innerHTML =
+            "<table>" +
+            "<thead><tr><th>Start</th><th>End</th><th>Direction</th><th>Step</th><th>Active now</th><th>Current value</th><th>Last triggered</th><th>Next trigger</th></tr></thead>" +
+            "<tbody>" + rows + "</tbody>" +
+            "</table>";
+        }
+
+        function loadAll() {
+          if (isLoading) return;
+          isLoading = true;
           setStatus("Loading...");
+          var pending = 2;
+
+          function doneOne() {
+            pending -= 1;
+            if (pending === 0) {
+              isLoading = false;
+            }
+          }
+
           Homey.api("GET", "/ramps", null, function (err, result) {
-            if (err) return Homey.alert(err.message || String(err));
+            if (err) {
+              isLoading = false;
+              return Homey.alert(err.message || String(err));
+            }
 
             var ramps = (result && result.ramps) || [];
-            render(ramps);
+            renderRamps(ramps);
             setStatus("Active ramps: " + ramps.length);
+            doneOne();
+          });
+
+          Homey.api("GET", "/sun-value-configurations", null, function (err, result) {
+            if (err) {
+              isLoading = false;
+              return Homey.alert(err.message || String(err));
+            }
+
+            var configurations = (result && result.configurations) || [];
+            renderSunConfigurations(configurations);
+            doneOne();
           });
         }
 
-        refreshBtn.addEventListener("click", loadRamps);
+        refreshBtn.addEventListener("click", loadAll);
 
         stopAllBtn.addEventListener("click", function () {
           Homey.api("DELETE", "/ramps-stop-all", null, function (err, result) {
             if (err) return Homey.alert(err.message || String(err));
             var count = (result && result.stoppedCount) || 0;
             setStatus("Stopped ramps: " + count);
-            loadRamps();
+            loadAll();
           });
         });
 
-        loadRamps();
+        loadAll();
+        refreshIntervalId = setInterval(loadAll, 5000);
+        window.addEventListener("beforeunload", function () {
+          if (refreshIntervalId !== null) {
+            clearInterval(refreshIntervalId);
+            refreshIntervalId = null;
+          }
+        });
         Homey.ready();
       }
     </script>
