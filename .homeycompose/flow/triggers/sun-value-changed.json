@@ -4,7 +4,7 @@
     "en": "Sun value changed"
   },
   "titleFormatted": {
-    "en": "Sun value changed ([[startTime]] – [[endTime]], [[direction]], step [[step]]%)"
+    "en": "Sun changes [[startTime]]–[[endTime]] • [[direction]] • [[step]] pp/step"
   },
   "args": [
     {

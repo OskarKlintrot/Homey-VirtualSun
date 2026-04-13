@@ -38,7 +38,7 @@
           "en": "Sun value changed"
         },
         "titleFormatted": {
-          "en": "Sun value changed ([[startTime]] – [[endTime]], [[direction]], step [[step]]%)"
+          "en": "Sun changes [[startTime]]–[[endTime]] • [[direction]] • [[step]] pp/step"
         },
         "args": [
           {
@@ -105,43 +105,52 @@
     ],
     "actions": [
       {
-        "id": "ramp-value-integer",
+        "id": "convert-range",
         "title": {
-          "en": "Convert value from 100->0 to x->y"
+          "en": "Convert value from 100->0 (%) to x->y (%)"
         },
         "titleFormatted": {
-          "en": "Convert [[input]]% to integer between [[x]] and [[y]]"
+          "en": "Convert [[input]]% to range between [[x]] and [[y]]"
         },
         "args": [
           {
             "name": "input",
-            "type": "number",
+            "type": "range",
             "title": {
-              "en": "Input value (%)"
+              "en": "Input value"
             },
-            "placeholder": {
-              "en": "Flow tag, token, variable etc (%)"
-            }
+            "min": 0,
+            "max": 100,
+            "step": 0.1,
+            "label": "%"
           },
           {
             "name": "x",
-            "type": "number",
+            "type": "range",
             "title": {
-              "en": "X at 100% (integer)"
+              "en": "X at 100%"
             },
-            "placeholder": {
-              "en": "60"
-            }
+            "value": 1,
+            "min": 0,
+            "max": 1,
+            "step": 0.01,
+            "label": "%",
+            "labelMultiplier": 100,
+            "labelDecimals": 0
           },
           {
             "name": "y",
-            "type": "number",
+            "type": "range",
             "title": {
-              "en": "Y at 0% (integer)"
+              "en": "Y at 0%"
             },
-            "placeholder": {
-              "en": "20"
-            }
+            "value": 0,
+            "min": 0,
+            "max": 1,
+            "step": 0.01,
+            "label": "%",
+            "labelMultiplier": 100,
+            "labelDecimals": 0
           }
         ],
         "tokens": [
@@ -149,9 +158,9 @@
             "name": "ramped",
             "type": "number",
             "title": {
-              "en": "Converted Value (%)"
+              "en": "Converted value (%)"
             },
-            "example": 42
+            "example": 0.42
           }
         ]
       }

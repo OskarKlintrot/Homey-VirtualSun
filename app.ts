@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-import Homey from 'homey';
+import Homey from "homey";
 import {
   computeSunValue,
   normalizeDirection,
   parseTimeToMinutes,
   SunDirection,
-} from './lib/SunValue.ts';
-import { rampValueToInteger } from './lib/Ramp.ts';
+} from "./lib/SunValue.ts";
+import { rampValueToRange } from "./lib/Ramp.ts";
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -36,7 +36,7 @@ module.exports = class VSun extends Homey.App {
     }
 
     const direction = normalizeDirection(args.direction);
-    const step = typeof args.step === 'number' && args.step > 0 ? args.step : 1;
+    const step = typeof args.step === "number" && args.step > 0 ? args.step : 1;
     const key = `${startMinutes}|${endMinutes}|${direction}|${step}`;
 
     return {
@@ -49,7 +49,7 @@ module.exports = class VSun extends Homey.App {
   }
 
   async onInit() {
-    this.log('Virtual Sun has been initialized');
+    this.log("Virtual Sun has been initialized");
     try {
       this._timeZone = this.homey.clock.getTimezone();
     } catch (err) {
@@ -67,11 +67,16 @@ module.exports = class VSun extends Homey.App {
   }
 
   _initSunValueTrigger() {
-    const triggerCard = this.homey.flow.getTriggerCard('sun-value-changed');
+    const triggerCard = this.homey.flow.getTriggerCard("sun-value-changed");
 
     triggerCard.registerRunListener(
       async (
-        args: { startTime: unknown; endTime: unknown; direction?: unknown; step?: unknown },
+        args: {
+          startTime: unknown;
+          endTime: unknown;
+          direction?: unknown;
+          step?: unknown;
+        },
         state: {
           startMinutes: number;
           endMinutes: number;
@@ -86,10 +91,10 @@ module.exports = class VSun extends Homey.App {
         }
 
         return (
-          normalized.startMinutes === state.startMinutes
-          && normalized.endMinutes === state.endMinutes
-          && normalized.direction === state.direction
-          && normalized.step === state.step
+          normalized.startMinutes === state.startMinutes &&
+          normalized.endMinutes === state.endMinutes &&
+          normalized.direction === state.direction &&
+          normalized.step === state.step
         );
       },
     );
@@ -111,7 +116,7 @@ module.exports = class VSun extends Homey.App {
           step?: unknown;
         }>;
       } catch (err) {
-        this.error('Failed to get argument values', err);
+        this.error("Failed to get argument values", err);
         return;
       }
 
@@ -145,7 +150,11 @@ module.exports = class VSun extends Homey.App {
           continue;
         }
 
-        if (last === null || last === undefined || Math.abs(percentage - last) >= normalized.step) {
+        if (
+          last === null ||
+          last === undefined ||
+          Math.abs(percentage - last) >= normalized.step
+        ) {
           this._sunValueLastPercentage.set(key, percentage);
           try {
             await triggerCard.trigger(
@@ -158,34 +167,38 @@ module.exports = class VSun extends Homey.App {
               },
             );
           } catch (err) {
-            this.error('Trigger dispatch failed', err);
+            this.error("Trigger dispatch failed", err);
           }
         }
       }
     };
 
     pollOnce().catch((err: unknown) => {
-      this.error('Unhandled initial polling error', err);
+      this.error("Unhandled initial polling error", err);
     });
 
     this._pollTimer = setInterval(() => {
       pollOnce().catch((err: unknown) => {
-        this.error('Unhandled polling error', err);
+        this.error("Unhandled polling error", err);
       });
     }, POLL_INTERVAL_MS);
   }
 
   _initRampAction() {
-    const actionCard = this.homey.flow.getActionCard('ramp-value-integer');
+    const actionCard = this.homey.flow.getActionCard("convert-range");
 
-    actionCard.registerRunListener(async (args: { input: unknown; x: unknown; y: unknown }) => {
-      const ramped = rampValueToInteger(args.input, args.x, args.y);
+    actionCard.registerRunListener(
+      async (args: { input: unknown; x: unknown; y: unknown }) => {
+        const ramped = rampValueToRange(args.input, args.x, args.y);
 
-      if (ramped === null) {
-        throw new Error('Invalid arguments for ramp action. Input must be a number and x/y must be integers.');
-      }
+        if (ramped === null) {
+          throw new Error(
+            "Invalid arguments for ramp action. Input, x and y must be numbers.",
+          );
+        }
 
-      return { ramped };
-    });
+        return { ramped };
+      },
+    );
   }
 };

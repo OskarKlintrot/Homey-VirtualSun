@@ -1,0 +1,60 @@
+{
+  "id": "convert-range",
+  "title": {
+    "en": "Convert value from 100->0 (%) to x->y (%)"
+  },
+  "titleFormatted": {
+    "en": "Convert [[input]]% to range between [[x]] and [[y]]"
+  },
+  "args": [
+    {
+      "name": "input",
+      "type": "range",
+      "title": {
+        "en": "Input value"
+      },
+      "min": 0,
+      "max": 100,
+      "step": 0.1,
+      "label": "%"
+    },
+    {
+      "name": "x",
+      "type": "range",
+      "title": {
+        "en": "X at 100%"
+      },
+      "value": 1,
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "label": "%",
+      "labelMultiplier": 100,
+      "labelDecimals": 0
+    },
+    {
+      "name": "y",
+      "type": "range",
+      "title": {
+        "en": "Y at 0%"
+      },
+      "value": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "label": "%",
+      "labelMultiplier": 100,
+      "labelDecimals": 0
+    }
+  ],
+  "tokens": [
+    {
+      "name": "ramped",
+      "type": "number",
+      "title": {
+        "en": "Converted value (%)"
+      },
+      "example": 0.42
+    }
+  ]
+}

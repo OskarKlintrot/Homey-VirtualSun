@@ -1,52 +1,56 @@
 'use strict';
 
-import { rampValueToInteger, toInteger } from './Ramp.ts';
+import { rampValueToRange, toNumber } from './Ramp.ts';
 
-describe('toInteger', () => {
+describe('toNumber', () => {
   it('converts number input', () => {
-    expect(toInteger(60)).toBe(60);
-    expect(toInteger(60.4)).toBe(60);
-    expect(toInteger(60.6)).toBe(61);
+    expect(toNumber(0.6)).toBe(0.6);
+    expect(toNumber(1)).toBe(1);
   });
 
   it('converts string input', () => {
-    expect(toInteger('20')).toBe(20);
-    expect(toInteger('20.5')).toBe(21);
+    expect(toNumber('0.2')).toBe(0.2);
+    expect(toNumber('1')).toBe(1);
   });
 
   it('returns null for invalid input', () => {
-    expect(toInteger('abc')).toBeNull();
-    expect(toInteger(undefined)).toBeNull();
+    expect(toNumber('abc')).toBeNull();
+    expect(toNumber(undefined)).toBeNull();
   });
 });
 
-describe('rampValueToInteger', () => {
+describe('rampValueToRange', () => {
   it('maps 100 to x and 0 to y', () => {
-    expect(rampValueToInteger(100, 60, 20)).toBe(60);
-    expect(rampValueToInteger(0, 60, 20)).toBe(20);
+    expect(rampValueToRange(100, 1, 0.2)).toBe(1);
+    expect(rampValueToRange(0, 1, 0.2)).toBe(0.2);
   });
 
   it('maps linearly in between', () => {
-    expect(rampValueToInteger(50, 60, 20)).toBe(40);
-    expect(rampValueToInteger(75, 60, 20)).toBe(50);
-    expect(rampValueToInteger(25, 60, 20)).toBe(30);
+    expect(rampValueToRange(50, 1, 0.2)).toBe(0.6);
+    expect(rampValueToRange(75, 1, 0.2)).toBe(0.8);
+    expect(rampValueToRange(25, 1, 0.2)).toBe(0.4);
   });
 
   it('works with increasing range y->x', () => {
-    expect(rampValueToInteger(100, 20, 60)).toBe(20);
-    expect(rampValueToInteger(0, 20, 60)).toBe(60);
-    expect(rampValueToInteger(50, 20, 60)).toBe(40);
+    expect(rampValueToRange(100, 0.2, 1)).toBe(0.2);
+    expect(rampValueToRange(0, 0.2, 1)).toBe(1);
+    expect(rampValueToRange(50, 0.2, 1)).toBe(0.6);
   });
 
   it('clamps input to 0..100', () => {
-    expect(rampValueToInteger(120, 60, 20)).toBe(60);
-    expect(rampValueToInteger(-10, 60, 20)).toBe(20);
+    expect(rampValueToRange(120, 1, 0.2)).toBe(1);
+    expect(rampValueToRange(-10, 1, 0.2)).toBe(0.2);
+  });
+
+  it('clamps x and y to 0..1', () => {
+    expect(rampValueToRange(100, 2, -1)).toBe(1);
+    expect(rampValueToRange(0, 2, -1)).toBe(0);
   });
 
   it('returns null for invalid args', () => {
-    expect(rampValueToInteger('abc', 60, 20)).toBeNull();
-    expect(rampValueToInteger(50, 'x', 20)).toBeNull();
-    expect(rampValueToInteger(50, 60, null)).toBeNull();
+    expect(rampValueToRange('abc', 1, 0.2)).toBeNull();
+    expect(rampValueToRange(50, 'x', 0.2)).toBeNull();
+    expect(rampValueToRange(50, 1, null)).toBeNull();
   });
 });
 
