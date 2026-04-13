@@ -549,14 +549,23 @@ module.exports = class VSun extends Homey.App {
         }
 
         const id = String(++this._rampIdCounter);
+        const initialPercentage = direction === "up" ? 0 : 100;
+        const steppedInitialPercentage = this._snapPercentageToStep(initialPercentage, direction, step);
+
         this._activeRamps.set(id, {
           name: rampName,
           startTime: Date.now(),
           durationMs: durationMinutes * 60 * 1000,
           direction,
           step,
-          lastPercentage: null,
+          lastPercentage: steppedInitialPercentage,
         });
+
+        try {
+          await triggerCard.trigger({ value: steppedInitialPercentage }, { rampName });
+        } catch (err) {
+          this.error("Failed to trigger ramp start event", err);
+        }
       },
     );
 
