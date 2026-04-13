@@ -53,10 +53,10 @@
       {
         "id": "sun-ramp-value-changed",
         "title": {
-          "en": "Sun ramp changed"
+          "en": "Virtual sun changed"
         },
         "titleFormatted": {
-          "en": "Sun ramp [[rampName]] changes"
+          "en": "Virtual sun [[rampName]] changes"
         },
         "args": [
           {
