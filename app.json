@@ -226,7 +226,7 @@
             "name": "name",
             "type": "autocomplete",
             "title": {
-              "en": "Virtual sun name"
+              "en": "Virtual sun"
             },
             "placeholder": {
               "en": "morning-livingroom"
@@ -257,7 +257,7 @@
             "name": "name",
             "type": "autocomplete",
             "title": {
-              "en": "Virtual sun name"
+              "en": "Virtual sun"
             },
             "placeholder": {
               "en": "morning-livingroom"
