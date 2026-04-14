@@ -42,6 +42,8 @@ interface SunValueConfigInfo {
 }
 
 const CREATE_PREFIX = "__create__:";
+const RAMPS_STORAGE_KEY = "ramps_state";
+const COMPLETED_RAMPS_STORAGE_KEY = "completed_ramps_state";
 
 module.exports = class VSun extends Homey.App {
   private _sunValueLastPercentage: Map<string, number | null> = new Map();
@@ -259,6 +261,9 @@ module.exports = class VSun extends Homey.App {
     } catch (err) {
       this._timeZone = undefined;
     }
+    
+    this._loadRampsFromStorage();
+    
     this._initSunValueTrigger();
     this._initRampAction();
     this._initSunRamp();
@@ -273,6 +278,66 @@ module.exports = class VSun extends Homey.App {
     if (this._rampPollTimer) {
       clearInterval(this._rampPollTimer);
       this._rampPollTimer = null;
+    }
+    
+    this._saveRampsToStorage();
+  }
+
+  _loadRampsFromStorage(): void {
+    try {
+      // Load active ramps
+      const rampsData = this.homey.settings.get(RAMPS_STORAGE_KEY);
+      if (rampsData && Array.isArray(rampsData)) {
+        for (const rampData of rampsData) {
+          if (rampData.id && rampData.ramp) {
+            this._activeRamps.set(rampData.id, {
+              name: rampData.ramp.name,
+              startTime: rampData.ramp.startTime,
+              durationMs: rampData.ramp.durationMs,
+              direction: rampData.ramp.direction,
+              step: rampData.ramp.step,
+              lastPercentage: rampData.ramp.lastPercentage,
+            });
+            this._rampIdCounter = Math.max(this._rampIdCounter, parseInt(rampData.id));
+          }
+        }
+        this.log(`Loaded ${rampsData.length} active ramps from storage`);
+      }
+
+      // Load completed ramps
+      const completedData = this.homey.settings.get(COMPLETED_RAMPS_STORAGE_KEY);
+      if (completedData && typeof completedData === "object") {
+        for (const [name, value] of Object.entries(completedData)) {
+          if (typeof value === "number") {
+            this._completedRamps.set(name, value);
+          }
+        }
+        this.log(`Loaded ${this._completedRamps.size} completed ramps from storage`);
+      }
+    } catch (err) {
+      this.error("Failed to load ramps from storage", err);
+    }
+  }
+
+  _saveRampsToStorage(): void {
+    try {
+      // Save active ramps
+      const rampsData = Array.from(this._activeRamps.entries()).map(([id, ramp]) => ({
+        id,
+        ramp,
+      }));
+      this.homey.settings.set(RAMPS_STORAGE_KEY, rampsData);
+
+      // Save completed ramps
+      const completedData: Record<string, number> = {};
+      for (const [name, value] of this._completedRamps.entries()) {
+        completedData[name] = value;
+      }
+      this.homey.settings.set(COMPLETED_RAMPS_STORAGE_KEY, completedData);
+
+      this.log(`Saved ${rampsData.length} active and ${this._completedRamps.size} completed ramps to storage`);
+    } catch (err) {
+      this.error("Failed to save ramps to storage", err);
     }
   }
 
@@ -550,6 +615,7 @@ module.exports = class VSun extends Homey.App {
 
         try {
           await triggerCard.trigger({ value: steppedInitialPercentage }, { rampName });
+          this._saveRampsToStorage();
         } catch (err) {
           this.error("Failed to trigger ramp start event", err);
         }
@@ -559,6 +625,8 @@ module.exports = class VSun extends Homey.App {
     const pollRamps = async () => {
       if (this._activeRamps.size === 0) return;
       const now = Date.now();
+      let shouldSave = false;
+
       for (const [id, ramp] of this._activeRamps) {
         const elapsed = now - ramp.startTime;
         let percentage: number;
@@ -592,7 +660,12 @@ module.exports = class VSun extends Homey.App {
         if (expired) {
           this._completedRamps.set(ramp.name, percentage);
           this._activeRamps.delete(id);
+          shouldSave = true;
         }
+      }
+
+      if (shouldSave) {
+        this._saveRampsToStorage();
       }
     };
 
