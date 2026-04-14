@@ -109,12 +109,14 @@ module.exports = class VSun extends Homey.App {
     }
 
     this._activeVirtualSuns.delete(id);
+    this._saveVirtualSunsToStorage();
     return true;
   }
 
   stopAllVirtualSuns(): number {
     const count = this._activeVirtualSuns.size;
     this._activeVirtualSuns.clear();
+    this._saveVirtualSunsToStorage();
     return count;
   }
 
