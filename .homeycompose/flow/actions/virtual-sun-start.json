@@ -1,17 +1,17 @@
 {
-  "id": "sun-ramp-start",
+  "id": "virtual-sun-start",
   "title": {
     "en": "Virtual sun start"
   },
   "titleFormatted": {
-    "en": "Virtual sun [[rampName]] • [[duration]] min • [[direction]] • [[step]] pp/step"
+    "en": "Virtual sun [[name]] • [[duration]] min • [[direction]] • [[step]] pp/step"
   },
   "args": [
     {
-      "name": "rampName",
+      "name": "name",
       "type": "autocomplete",
       "title": {
-        "en": "Ramp name"
+        "en": "Virtual sun name"
       },
       "placeholder": {
         "en": "morning-livingroom"

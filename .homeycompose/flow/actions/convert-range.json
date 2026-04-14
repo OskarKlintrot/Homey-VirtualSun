@@ -49,7 +49,7 @@
   ],
   "tokens": [
     {
-      "name": "ramped",
+      "name": "convertedValue",
       "type": "number",
       "title": {
         "en": "Converted value (%)"

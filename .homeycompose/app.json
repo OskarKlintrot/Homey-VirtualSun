@@ -30,21 +30,21 @@
   },
   "support": "mailto:oskar.klintrot@gmail.com",
   "api": {
-    "getActiveRamps": {
+    "getActiveVirtualSuns": {
       "method": "GET",
-      "path": "/ramps"
+      "path": "/virtual-suns"
     },
     "getSunValueConfigurations": {
       "method": "GET",
       "path": "/sun-value-configurations"
     },
-    "stopRamp": {
+    "stopVirtualSun": {
       "method": "DELETE",
-      "path": "/ramps/:name"
+      "path": "/virtual-suns/:name"
     },
-    "stopAllRamps": {
+    "stopAllVirtualSuns": {
       "method": "DELETE",
-      "path": "/ramps-stop-all"
+      "path": "/virtual-suns-stop-all"
     }
   }
 }

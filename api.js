@@ -1,9 +1,9 @@
 "use strict";
 
 module.exports = {
-  async getActiveRamps({ homey }) {
+  async getActiveVirtualSuns({ homey }) {
     return {
-      ramps: homey.app.getActiveRamps(),
+      virtualSuns: homey.app.getActiveVirtualSuns(),
     };
   },
 
@@ -13,17 +13,17 @@ module.exports = {
     };
   },
 
-  async stopRamp({ homey, params }) {
+  async stopVirtualSun({ homey, params }) {
     const decodedName = decodeURIComponent(params.name || "");
-    const stopped = homey.app.stopRampByName(decodedName);
+    const stopped = homey.app.stopVirtualSunByName(decodedName);
 
     return {
       stopped,
     };
   },
 
-  async stopAllRamps({ homey }) {
-    const stoppedCount = homey.app.stopAllRamps();
+  async stopAllVirtualSuns({ homey }) {
+    const stoppedCount = homey.app.stopAllVirtualSuns();
 
     return {
       stoppedCount,

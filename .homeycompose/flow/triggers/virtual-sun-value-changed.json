@@ -1,20 +1,20 @@
 {
-  "id": "sun-ramp-value-changed",
+  "id": "virtual-sun-value-changed",
   "title": {
     "en": "Virtual sun changed"
   },
   "titleFormatted": {
-    "en": "Virtual sun [[rampName]] changes"
+    "en": "Virtual sun [[name]] changes"
   },
   "args": [
     {
-      "name": "rampName",
+      "name": "name",
       "type": "autocomplete",
       "title": {
-        "en": "Ramp"
+        "en": "Virtual Sun"
       },
       "placeholder": {
-        "en": "Pick a ramp"
+        "en": "Pick a virtual sun"
       }
     }
   ],

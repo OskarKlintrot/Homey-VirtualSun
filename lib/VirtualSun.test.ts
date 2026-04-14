@@ -1,6 +1,6 @@
 'use strict';
 
-import { rampValueToRange, toNumber, snapPercentageToStep } from './Ramp.ts';
+import { virtualSunValueToRange, toNumber, snapPercentageToStep } from './VirtualSun.ts';
 
 describe('toNumber', () => {
   it('converts number input', () => {
@@ -19,38 +19,38 @@ describe('toNumber', () => {
   });
 });
 
-describe('rampValueToRange', () => {
+describe('virtualSunValueToRange', () => {
   it('maps 100 to x and 0 to y', () => {
-    expect(rampValueToRange(100, 1, 0.2)).toBe(1);
-    expect(rampValueToRange(0, 1, 0.2)).toBe(0.2);
+    expect(virtualSunValueToRange(100, 1, 0.2)).toBe(1);
+    expect(virtualSunValueToRange(0, 1, 0.2)).toBe(0.2);
   });
 
   it('maps linearly in between', () => {
-    expect(rampValueToRange(50, 1, 0.2)).toBe(0.6);
-    expect(rampValueToRange(75, 1, 0.2)).toBe(0.8);
-    expect(rampValueToRange(25, 1, 0.2)).toBe(0.4);
+    expect(virtualSunValueToRange(50, 1, 0.2)).toBe(0.6);
+    expect(virtualSunValueToRange(75, 1, 0.2)).toBe(0.8);
+    expect(virtualSunValueToRange(25, 1, 0.2)).toBe(0.4);
   });
 
   it('works with increasing range y->x', () => {
-    expect(rampValueToRange(100, 0.2, 1)).toBe(0.2);
-    expect(rampValueToRange(0, 0.2, 1)).toBe(1);
-    expect(rampValueToRange(50, 0.2, 1)).toBe(0.6);
+    expect(virtualSunValueToRange(100, 0.2, 1)).toBe(0.2);
+    expect(virtualSunValueToRange(0, 0.2, 1)).toBe(1);
+    expect(virtualSunValueToRange(50, 0.2, 1)).toBe(0.6);
   });
 
   it('clamps input to 0..100', () => {
-    expect(rampValueToRange(120, 1, 0.2)).toBe(1);
-    expect(rampValueToRange(-10, 1, 0.2)).toBe(0.2);
+    expect(virtualSunValueToRange(120, 1, 0.2)).toBe(1);
+    expect(virtualSunValueToRange(-10, 1, 0.2)).toBe(0.2);
   });
 
   it('clamps x and y to 0..1', () => {
-    expect(rampValueToRange(100, 2, -1)).toBe(1);
-    expect(rampValueToRange(0, 2, -1)).toBe(0);
+    expect(virtualSunValueToRange(100, 2, -1)).toBe(1);
+    expect(virtualSunValueToRange(0, 2, -1)).toBe(0);
   });
 
   it('returns null for invalid args', () => {
-    expect(rampValueToRange('abc', 1, 0.2)).toBeNull();
-    expect(rampValueToRange(50, 'x', 0.2)).toBeNull();
-    expect(rampValueToRange(50, 1, null)).toBeNull();
+    expect(virtualSunValueToRange('abc', 1, 0.2)).toBeNull();
+    expect(virtualSunValueToRange(50, 'x', 0.2)).toBeNull();
+    expect(virtualSunValueToRange(50, 1, null)).toBeNull();
   });
 });
 

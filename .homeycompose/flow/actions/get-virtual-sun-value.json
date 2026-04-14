@@ -1,14 +1,14 @@
 {
-  "id": "get-ramp-value",
+  "id": "get-virtual-sun-value",
   "title": {
     "en": "Get virtual sun value"
   },
   "titleFormatted": {
-    "en": "Get value of virtual sun [[rampName]]"
+    "en": "Get value of virtual sun [[name]]"
   },
   "args": [
     {
-      "name": "rampName",
+      "name": "name",
       "type": "autocomplete",
       "title": {
         "en": "Virtual sun name"

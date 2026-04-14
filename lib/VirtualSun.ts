@@ -17,7 +17,7 @@ export function toNumber(value: unknown): number | null {
   return null;
 }
 
-export function rampValueToRange(input: unknown, x: unknown, y: unknown): number | null {
+export function virtualSunValueToRange(input: unknown, x: unknown, y: unknown): number | null {
   const source = typeof input === 'number' ? input : Number(input);
   const xNum = toNumber(x);
   const yNum = toNumber(y);

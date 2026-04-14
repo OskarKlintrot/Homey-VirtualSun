@@ -31,56 +31,25 @@
   },
   "support": "mailto:oskar.klintrot@gmail.com",
   "api": {
-    "getActiveRamps": {
+    "getActiveVirtualSuns": {
       "method": "GET",
-      "path": "/ramps"
+      "path": "/virtual-suns"
     },
     "getSunValueConfigurations": {
       "method": "GET",
       "path": "/sun-value-configurations"
     },
-    "stopRamp": {
+    "stopVirtualSun": {
       "method": "DELETE",
-      "path": "/ramps/:name"
+      "path": "/virtual-suns/:name"
     },
-    "stopAllRamps": {
+    "stopAllVirtualSuns": {
       "method": "DELETE",
-      "path": "/ramps-stop-all"
+      "path": "/virtual-suns-stop-all"
     }
   },
   "flow": {
     "triggers": [
-      {
-        "id": "sun-ramp-value-changed",
-        "title": {
-          "en": "Virtual sun changed"
-        },
-        "titleFormatted": {
-          "en": "Virtual sun [[rampName]] changes"
-        },
-        "args": [
-          {
-            "name": "rampName",
-            "type": "autocomplete",
-            "title": {
-              "en": "Ramp"
-            },
-            "placeholder": {
-              "en": "Pick a ramp"
-            }
-          }
-        ],
-        "tokens": [
-          {
-            "name": "value",
-            "type": "number",
-            "title": {
-              "en": "Value (%)"
-            },
-            "example": 75
-          }
-        ]
-      },
       {
         "id": "sun-value-changed",
         "title": {
@@ -150,6 +119,37 @@
             "example": 75
           }
         ]
+      },
+      {
+        "id": "virtual-sun-value-changed",
+        "title": {
+          "en": "Virtual sun changed"
+        },
+        "titleFormatted": {
+          "en": "Virtual sun [[name]] changes"
+        },
+        "args": [
+          {
+            "name": "name",
+            "type": "autocomplete",
+            "title": {
+              "en": "Virtual Sun"
+            },
+            "placeholder": {
+              "en": "Pick a virtual sun"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "number",
+            "title": {
+              "en": "Value (%)"
+            },
+            "example": 75
+          }
+        ]
       }
     ],
     "actions": [
@@ -204,7 +204,7 @@
         ],
         "tokens": [
           {
-            "name": "ramped",
+            "name": "convertedValue",
             "type": "number",
             "title": {
               "en": "Converted value (%)"
@@ -214,16 +214,16 @@
         ]
       },
       {
-        "id": "get-ramp-value",
+        "id": "get-virtual-sun-value",
         "title": {
           "en": "Get virtual sun value"
         },
         "titleFormatted": {
-          "en": "Get value of virtual sun [[rampName]]"
+          "en": "Get value of virtual sun [[name]]"
         },
         "args": [
           {
-            "name": "rampName",
+            "name": "name",
             "type": "autocomplete",
             "title": {
               "en": "Virtual sun name"
@@ -245,19 +245,19 @@
         ]
       },
       {
-        "id": "sun-ramp-start",
+        "id": "virtual-sun-start",
         "title": {
           "en": "Virtual sun start"
         },
         "titleFormatted": {
-          "en": "Virtual sun [[rampName]] • [[duration]] min • [[direction]] • [[step]] pp/step"
+          "en": "Virtual sun [[name]] • [[duration]] min • [[direction]] • [[step]] pp/step"
         },
         "args": [
           {
-            "name": "rampName",
+            "name": "name",
             "type": "autocomplete",
             "title": {
-              "en": "Ramp name"
+              "en": "Virtual sun name"
             },
             "placeholder": {
               "en": "morning-livingroom"
