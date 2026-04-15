@@ -152,6 +152,29 @@
         ]
       }
     ],
+    "conditions": [
+      {
+        "id": "virtual-sun-is-active",
+        "title": {
+          "en": "Virtual sun is active"
+        },
+        "titleFormatted": {
+          "en": "Virtual sun [[name]] is active"
+        },
+        "args": [
+          {
+            "name": "name",
+            "type": "autocomplete",
+            "title": {
+              "en": "Virtual sun"
+            },
+            "placeholder": {
+              "en": "Pick a virtual sun"
+            }
+          }
+        ]
+      }
+    ],
     "actions": [
       {
         "id": "convert-range",

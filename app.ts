@@ -275,6 +275,7 @@ module.exports = class VSun extends Homey.App {
     this._initVirtualSunAction();
     this._initVirtualSun();
     this._initGetVirtualSunValue();
+    this._initVirtualSunIsActiveCondition();
   }
 
   async onUninit() {
@@ -536,6 +537,19 @@ module.exports = class VSun extends Homey.App {
       this.error("Failed to read get-virtual-sun-value arguments", err);
     }
 
+    try {
+      const conditionCard = this.homey.flow.getConditionCard("virtual-sun-is-active");
+      const conditionArgs = (await conditionCard.getArgumentValues()) as Array<{ name?: unknown }>;
+      for (const args of conditionArgs) {
+        const name = this._parseVirtualSunName(args.name);
+        if (name !== null) {
+          names.add(name);
+        }
+      }
+    } catch (err) {
+      this.error("Failed to read virtual-sun-is-active arguments", err);
+    }
+
     return Array.from(names).sort((a, b) => a.localeCompare(b));
   }
 
@@ -744,5 +758,31 @@ module.exports = class VSun extends Homey.App {
         throw new Error(`Virtual Sun "${virtualSunName}" is not found or not started`);
       },
     );
+  }
+
+  _initVirtualSunIsActiveCondition() {
+    const conditionCard = this.homey.flow.getConditionCard("virtual-sun-is-active");
+
+    conditionCard.registerArgumentAutocompleteListener("name", async (query: string) => {
+      const normalizedQuery = query.trim().toLowerCase();
+      const names = await this._collectVirtualSunNames();
+      const matchingNames = names
+        .filter((name) => normalizedQuery === "" || name.toLowerCase().includes(normalizedQuery))
+        .map((name) => ({
+          id: name,
+          name,
+        }));
+
+      return matchingNames;
+    });
+
+    conditionCard.registerRunListener(async (args: { name?: unknown }) => {
+      const virtualSunName = this._parseVirtualSunName(args.name);
+      if (virtualSunName === null) {
+        return false;
+      }
+
+      return this._findActiveVirtualSunIdByName(virtualSunName) !== null;
+    });
   }
 };

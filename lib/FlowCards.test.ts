@@ -65,6 +65,17 @@ describe("flow cards", () => {
     expect(valueToken.type).toBe("number");
   });
 
+  it("virtual-sun-is-active has virtual sun picker", () => {
+    const card = readJson(".homeycompose/flow/conditions/virtual-sun-is-active.json");
+
+    expect(card.id).toBe("virtual-sun-is-active");
+    expect(card.titleFormatted.en).toContain("[[name]]");
+
+    const virtualSunArg = card.args.find((arg: any) => arg.name === "name");
+    expect(virtualSunArg).toBeDefined();
+    expect(virtualSunArg.type).toBe("autocomplete");
+  });
+
   it("convert-range accepts normalized percentage input", () => {
     const card = readJson(".homeycompose/flow/actions/convert-range.json");
 
