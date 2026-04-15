@@ -64,5 +64,22 @@ describe("flow cards", () => {
     expect(valueToken).toBeDefined();
     expect(valueToken.type).toBe("number");
   });
+
+  it("convert-range accepts normalized percentage input", () => {
+    const card = readJson(".homeycompose/flow/actions/convert-range.json");
+
+    expect(card.id).toBe("convert-range");
+
+    const inputArg = card.args.find((arg: any) => arg.name === "input");
+    expect(inputArg).toBeDefined();
+    expect(inputArg.type).toBe("range");
+    expect(inputArg.min).toBe(0);
+    expect(inputArg.max).toBe(1);
+    expect(inputArg.labelMultiplier).toBe(100);
+
+    const convertedValueToken = card.tokens.find((token: any) => token.name === "convertedValue");
+    expect(convertedValueToken).toBeDefined();
+    expect(convertedValueToken.example).toBe(0.42);
+  });
 });
 

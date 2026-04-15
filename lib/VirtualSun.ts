@@ -17,20 +17,34 @@ export function toNumber(value: unknown): number | null {
   return null;
 }
 
-export function virtualSunValueToRange(input: unknown, x: unknown, y: unknown): number | null {
-  const source = typeof input === 'number' ? input : Number(input);
-  const xNum = toNumber(x);
-  const yNum = toNumber(y);
+export function normalizeFlowPercentageInput(value: unknown): number | null {
+  const numericValue = toNumber(value);
 
-  if (!Number.isFinite(source) || xNum === null || yNum === null) {
+  if (numericValue === null) {
     return null;
   }
 
-  const clampedInput = Math.min(100, Math.max(0, source));
+  if (numericValue >= 0 && numericValue <= 1) {
+    return Math.round(numericValue * 1000) / 1000;
+  }
+
+  const clampedPercentage = Math.min(100, Math.max(0, numericValue));
+  return Math.round((clampedPercentage / 100) * 1000) / 1000;
+}
+
+export function virtualSunValueToRange(input: unknown, x: unknown, y: unknown): number | null {
+  const source = normalizeFlowPercentageInput(input);
+  const xNum = toNumber(x);
+  const yNum = toNumber(y);
+
+  if (source === null || xNum === null || yNum === null) {
+    return null;
+  }
+
   const clampedX = Math.min(1, Math.max(0, xNum));
   const clampedY = Math.min(1, Math.max(0, yNum));
 
-  const raw = clampedY + (clampedInput / 100) * (clampedX - clampedY);
+  const raw = clampedY + source * (clampedX - clampedY);
   return Math.round(raw * 1000) / 1000;
 }
 

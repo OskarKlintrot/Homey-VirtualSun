@@ -45,6 +45,11 @@ const CREATE_PREFIX = "__create__:";
 const VIRTUAL_SUNS_STORAGE_KEY = "virtual_suns_state";
 const COMPLETED_VIRTUAL_SUNS_STORAGE_KEY = "completed_virtual_suns_state";
 
+function toFlowPercentageValue(percentage: number): number {
+  const clampedPercentage = Math.min(100, Math.max(0, percentage));
+  return Math.round((clampedPercentage / 100) * 1000) / 1000;
+}
+
 module.exports = class VSun extends Homey.App {
   private _sunValueLastPercentage: Map<string, number | null> = new Map();
   private _pollTimer: NodeJS.Timeout | null = null;
@@ -441,7 +446,7 @@ module.exports = class VSun extends Homey.App {
           this._sunValueLastPercentage.set(key, steppedPercentage);
           try {
             await triggerCard.trigger(
-              { value: steppedPercentage },
+              { value: toFlowPercentageValue(steppedPercentage) },
               {
                 startMinutes: normalized.startMinutes,
                 endMinutes: normalized.endMinutes,
@@ -616,7 +621,10 @@ module.exports = class VSun extends Homey.App {
         });
 
         try {
-          await triggerCard.trigger({ value: steppedInitialPercentage }, { name: virtualSunName });
+          await triggerCard.trigger(
+            { value: toFlowPercentageValue(steppedInitialPercentage) },
+            { name: virtualSunName },
+          );
           this._saveVirtualSunsToStorage();
         } catch (err) {
           this.error("Failed to trigger virtual sun start event", err);
@@ -653,7 +661,10 @@ module.exports = class VSun extends Homey.App {
         if (shouldFire) {
           virtualSun.lastPercentage = steppedPercentage;
           try {
-            await triggerCard.trigger({ value: steppedPercentage }, { name: virtualSun.name });
+            await triggerCard.trigger(
+              { value: toFlowPercentageValue(steppedPercentage) },
+              { name: virtualSun.name },
+            );
           } catch (err) {
             this.error("Virtual Sun trigger dispatch failed", err);
           }
@@ -720,14 +731,14 @@ module.exports = class VSun extends Homey.App {
               virtualSun.direction,
               virtualSun.step,
             );
-            return { value: steppedPercentage };
+            return { value: toFlowPercentageValue(steppedPercentage) };
           }
         }
 
         // If virtualSun is not active, check if it has completed
         const completedValue = this._completedVirtualSuns.get(virtualSunName);
         if (completedValue !== undefined) {
-          return { value: completedValue };
+          return { value: toFlowPercentageValue(completedValue) };
         }
 
         throw new Error(`Virtual Sun "${virtualSunName}" is not found or not started`);

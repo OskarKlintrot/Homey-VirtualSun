@@ -1,6 +1,11 @@
 'use strict';
 
-import { virtualSunValueToRange, toNumber, snapPercentageToStep } from './VirtualSun.ts';
+import {
+  normalizeFlowPercentageInput,
+  virtualSunValueToRange,
+  toNumber,
+  snapPercentageToStep,
+} from './VirtualSun.ts';
 
 describe('toNumber', () => {
   it('converts number input', () => {
@@ -20,24 +25,29 @@ describe('toNumber', () => {
 });
 
 describe('virtualSunValueToRange', () => {
-  it('maps 100 to x and 0 to y', () => {
-    expect(virtualSunValueToRange(100, 1, 0.2)).toBe(1);
+  it('maps 1 to x and 0 to y', () => {
+    expect(virtualSunValueToRange(1, 1, 0.2)).toBe(1);
     expect(virtualSunValueToRange(0, 1, 0.2)).toBe(0.2);
   });
 
   it('maps linearly in between', () => {
-    expect(virtualSunValueToRange(50, 1, 0.2)).toBe(0.6);
-    expect(virtualSunValueToRange(75, 1, 0.2)).toBe(0.8);
-    expect(virtualSunValueToRange(25, 1, 0.2)).toBe(0.4);
+    expect(virtualSunValueToRange(0.5, 1, 0.2)).toBe(0.6);
+    expect(virtualSunValueToRange(0.75, 1, 0.2)).toBe(0.8);
+    expect(virtualSunValueToRange(0.25, 1, 0.2)).toBe(0.4);
   });
 
   it('works with increasing range y->x', () => {
-    expect(virtualSunValueToRange(100, 0.2, 1)).toBe(0.2);
+    expect(virtualSunValueToRange(1, 0.2, 1)).toBe(0.2);
     expect(virtualSunValueToRange(0, 0.2, 1)).toBe(1);
-    expect(virtualSunValueToRange(50, 0.2, 1)).toBe(0.6);
+    expect(virtualSunValueToRange(0.5, 0.2, 1)).toBe(0.6);
   });
 
-  it('clamps input to 0..100', () => {
+  it('supports legacy 0..100 input values', () => {
+    expect(virtualSunValueToRange(100, 1, 0.2)).toBe(1);
+    expect(virtualSunValueToRange(50, 1, 0.2)).toBe(0.6);
+  });
+
+  it('clamps input to 0..1 after normalization', () => {
     expect(virtualSunValueToRange(120, 1, 0.2)).toBe(1);
     expect(virtualSunValueToRange(-10, 1, 0.2)).toBe(0.2);
   });
@@ -49,8 +59,25 @@ describe('virtualSunValueToRange', () => {
 
   it('returns null for invalid args', () => {
     expect(virtualSunValueToRange('abc', 1, 0.2)).toBeNull();
-    expect(virtualSunValueToRange(50, 'x', 0.2)).toBeNull();
-    expect(virtualSunValueToRange(50, 1, null)).toBeNull();
+    expect(virtualSunValueToRange(0.5, 'x', 0.2)).toBeNull();
+    expect(virtualSunValueToRange(0.5, 1, null)).toBeNull();
+  });
+});
+
+describe('normalizeFlowPercentageInput', () => {
+  it('keeps normalized values unchanged', () => {
+    expect(normalizeFlowPercentageInput(0.42)).toBe(0.42);
+    expect(normalizeFlowPercentageInput('0.75')).toBe(0.75);
+  });
+
+  it('converts legacy percentage values to normalized values', () => {
+    expect(normalizeFlowPercentageInput(42)).toBe(0.42);
+    expect(normalizeFlowPercentageInput('75')).toBe(0.75);
+  });
+
+  it('clamps normalized output to 0..1', () => {
+    expect(normalizeFlowPercentageInput(120)).toBe(1);
+    expect(normalizeFlowPercentageInput(-10)).toBe(0);
   });
 });
 
