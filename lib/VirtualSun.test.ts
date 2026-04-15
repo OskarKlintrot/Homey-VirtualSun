@@ -5,7 +5,7 @@ import {
   virtualSunValueToRange,
   toNumber,
   snapPercentageToStep,
-} from './VirtualSun.ts';
+} from './VirtualSun';
 
 describe('toNumber', () => {
   it('converts number input', () => {

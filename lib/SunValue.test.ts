@@ -5,7 +5,7 @@ import {
   localMinutesNow,
   normalizeDirection,
   parseTimeToMinutes,
-} from './SunValue.ts';
+} from './SunValue';
 
 function makeDate(hours: number, minutes: number, seconds = 0): Date {
   const d = new Date(2024, 0, 1, hours, minutes, seconds);
