@@ -3,11 +3,8 @@
   "compilerOptions": {
     "allowJs": true,
     "outDir": ".homeybuild/",
-    "types": ["node"],
+    "types": ["node", "jest"],
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true
-  },
-  "exclude": [
-    "**/*.test.ts"
-  ]
+  }
 }
