@@ -337,6 +337,27 @@
             }
           }
         ]
+      },
+      {
+        "id": "virtual-sun-stop",
+        "title": {
+          "en": "Stop virtual sun"
+        },
+        "titleFormatted": {
+          "en": "Stop virtual sun [[name]]"
+        },
+        "args": [
+          {
+            "name": "name",
+            "type": "autocomplete",
+            "title": {
+              "en": "Virtual sun"
+            },
+            "placeholder": {
+              "en": "Pick a virtual sun"
+            }
+          }
+        ]
       }
     ]
   }

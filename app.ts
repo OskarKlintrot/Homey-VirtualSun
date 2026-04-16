@@ -276,6 +276,7 @@ module.exports = class VSun extends Homey.App {
     this._initVirtualSun();
     this._initGetVirtualSunValue();
     this._initVirtualSunIsActiveCondition();
+    this._initVirtualSunStopAction();
   }
 
   async onUninit() {
@@ -538,6 +539,19 @@ module.exports = class VSun extends Homey.App {
     }
 
     try {
+      const stopCard = this.homey.flow.getActionCard("virtual-sun-stop");
+      const stopArgs = (await stopCard.getArgumentValues()) as Array<{ name?: unknown }>;
+      for (const args of stopArgs) {
+        const name = this._parseVirtualSunName(args.name);
+        if (name !== null) {
+          names.add(name);
+        }
+      }
+    } catch (err) {
+      this.error("Failed to read virtual-sun-stop arguments", err);
+    }
+
+    try {
       const conditionCard = this.homey.flow.getConditionCard("virtual-sun-is-active");
       const conditionArgs = (await conditionCard.getArgumentValues()) as Array<{ name?: unknown }>;
       for (const args of conditionArgs) {
@@ -783,6 +797,34 @@ module.exports = class VSun extends Homey.App {
       }
 
       return this._findActiveVirtualSunIdByName(virtualSunName) !== null;
+    });
+  }
+
+  _initVirtualSunStopAction() {
+    const actionCard = this.homey.flow.getActionCard("virtual-sun-stop");
+
+    actionCard.registerArgumentAutocompleteListener("name", async (query: string) => {
+      const normalizedQuery = query.trim().toLowerCase();
+      const names = await this._collectVirtualSunNames();
+      const matchingNames = names
+        .filter((name) => normalizedQuery === "" || name.toLowerCase().includes(normalizedQuery))
+        .map((name) => ({
+          id: name,
+          name,
+        }));
+
+      return matchingNames;
+    });
+
+    actionCard.registerRunListener(async (args: { name?: unknown }) => {
+      const virtualSunName = this._parseVirtualSunName(args.name);
+      if (virtualSunName === null) {
+        throw new Error("Invalid virtual sun name.");
+      }
+
+      this._knownVirtualSunNames.add(virtualSunName);
+      this.stopVirtualSunByName(virtualSunName);
+      return true;
     });
   }
 };
