@@ -152,6 +152,68 @@
         ]
       },
       {
+        "id": "virtual-sun-finished",
+        "title": {
+          "en": "Virtual sun finished"
+        },
+        "titleFormatted": {
+          "en": "Virtual sun [[name]] finished"
+        },
+        "args": [
+          {
+            "name": "name",
+            "type": "autocomplete",
+            "title": {
+              "en": "Virtual sun"
+            },
+            "placeholder": {
+              "en": "Pick a virtual sun"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "number",
+            "title": {
+              "en": "Value (%)"
+            },
+            "example": 0
+          }
+        ]
+      },
+      {
+        "id": "virtual-sun-started",
+        "title": {
+          "en": "Virtual sun started"
+        },
+        "titleFormatted": {
+          "en": "Virtual sun [[name]] started"
+        },
+        "args": [
+          {
+            "name": "name",
+            "type": "autocomplete",
+            "title": {
+              "en": "Virtual sun"
+            },
+            "placeholder": {
+              "en": "Pick a virtual sun"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "number",
+            "title": {
+              "en": "Value (%)"
+            },
+            "example": 1
+          }
+        ]
+      },
+      {
         "id": "virtual-sun-value-changed",
         "title": {
           "en": "Virtual sun changed"

@@ -1,0 +1,31 @@
+{
+  "id": "virtual-sun-finished",
+  "title": {
+    "en": "Virtual sun finished"
+  },
+  "titleFormatted": {
+    "en": "Virtual sun [[name]] finished"
+  },
+  "args": [
+    {
+      "name": "name",
+      "type": "autocomplete",
+      "title": {
+        "en": "Virtual sun"
+      },
+      "placeholder": {
+        "en": "Pick a virtual sun"
+      }
+    }
+  ],
+  "tokens": [
+    {
+      "name": "value",
+      "type": "number",
+      "title": {
+        "en": "Value (%)"
+      },
+      "example": 0
+    }
+  ]
+}

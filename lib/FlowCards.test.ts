@@ -49,6 +49,38 @@ describe("flow cards", () => {
     expect(valueToken.type).toBe("number");
   });
 
+  it("virtual-sun-started has virtual sun picker and value token", () => {
+    const card = readJson(".homeycompose/flow/triggers/virtual-sun-started.json");
+
+    expect(card.id).toBe("virtual-sun-started");
+    expect(card.titleFormatted.en).toContain("[[name]]");
+
+    const virtualSunArg = card.args.find((arg: any) => arg.name === "name");
+    expect(virtualSunArg).toBeDefined();
+    expect(virtualSunArg.type).toBe("autocomplete");
+
+    expect(Array.isArray(card.tokens)).toBe(true);
+    const valueToken = card.tokens.find((token: any) => token.name === "value");
+    expect(valueToken).toBeDefined();
+    expect(valueToken.type).toBe("number");
+  });
+
+  it("virtual-sun-finished has virtual sun picker and value token", () => {
+    const card = readJson(".homeycompose/flow/triggers/virtual-sun-finished.json");
+
+    expect(card.id).toBe("virtual-sun-finished");
+    expect(card.titleFormatted.en).toContain("[[name]]");
+
+    const virtualSunArg = card.args.find((arg: any) => arg.name === "name");
+    expect(virtualSunArg).toBeDefined();
+    expect(virtualSunArg.type).toBe("autocomplete");
+
+    expect(Array.isArray(card.tokens)).toBe(true);
+    const valueToken = card.tokens.find((token: any) => token.name === "value");
+    expect(valueToken).toBeDefined();
+    expect(valueToken.type).toBe("number");
+  });
+
   it("virtual-sun-aborted has virtual sun picker and value token", () => {
     const card = readJson(".homeycompose/flow/triggers/virtual-sun-aborted.json");
 

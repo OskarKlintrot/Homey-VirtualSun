@@ -122,7 +122,23 @@ module.exports = class VSun extends Homey.App {
   }
 
   async _triggerVirtualSunAborted(name: string, steppedPercentage: number): Promise<void> {
-    const triggerCard = this.homey.flow.getTriggerCard("virtual-sun-aborted");
+    await this._triggerVirtualSunLifecycleEvent("virtual-sun-aborted", name, steppedPercentage);
+  }
+
+  async _triggerVirtualSunStarted(name: string, steppedPercentage: number): Promise<void> {
+    await this._triggerVirtualSunLifecycleEvent("virtual-sun-started", name, steppedPercentage);
+  }
+
+  async _triggerVirtualSunFinished(name: string, steppedPercentage: number): Promise<void> {
+    await this._triggerVirtualSunLifecycleEvent("virtual-sun-finished", name, steppedPercentage);
+  }
+
+  async _triggerVirtualSunLifecycleEvent(
+    triggerCardId: string,
+    name: string,
+    steppedPercentage: number,
+  ): Promise<void> {
+    const triggerCard = this.homey.flow.getTriggerCard(triggerCardId);
 
     try {
       await triggerCard.trigger(
@@ -130,7 +146,7 @@ module.exports = class VSun extends Homey.App {
         { name },
       );
     } catch (err) {
-      this.error("Failed to trigger virtual sun aborted event", err);
+      this.error(`Failed to trigger ${triggerCardId} event`, err);
     }
   }
 
@@ -329,6 +345,8 @@ module.exports = class VSun extends Homey.App {
     this._initVirtualSunIsActiveCondition();
     this._initVirtualSunStopAction();
     this._initVirtualSunAbortedTrigger();
+    this._initVirtualSunStartedTrigger();
+    this._initVirtualSunFinishedTrigger();
   }
 
   async onUninit() {
@@ -552,6 +570,32 @@ module.exports = class VSun extends Homey.App {
     }
 
     try {
+      const startedTriggerCard = this.homey.flow.getTriggerCard("virtual-sun-started");
+      const startedTriggerArgs = (await startedTriggerCard.getArgumentValues()) as Array<{ name?: unknown }>;
+      for (const args of startedTriggerArgs) {
+        const name = this._parseVirtualSunName(args.name);
+        if (name !== null) {
+          names.add(name);
+        }
+      }
+    } catch (err) {
+      this.error("Failed to read virtual-sun-started arguments", err);
+    }
+
+    try {
+      const finishedTriggerCard = this.homey.flow.getTriggerCard("virtual-sun-finished");
+      const finishedTriggerArgs = (await finishedTriggerCard.getArgumentValues()) as Array<{ name?: unknown }>;
+      for (const args of finishedTriggerArgs) {
+        const name = this._parseVirtualSunName(args.name);
+        if (name !== null) {
+          names.add(name);
+        }
+      }
+    } catch (err) {
+      this.error("Failed to read virtual-sun-finished arguments", err);
+    }
+
+    try {
       const abortedTriggerCard = this.homey.flow.getTriggerCard("virtual-sun-aborted");
       const abortedTriggerArgs = (await abortedTriggerCard.getArgumentValues()) as Array<{ name?: unknown }>;
       for (const args of abortedTriggerArgs) {
@@ -719,6 +763,7 @@ module.exports = class VSun extends Homey.App {
             { name: virtualSunName },
           );
           this._saveVirtualSunsToStorage();
+          await this._triggerVirtualSunStarted(virtualSunName, steppedInitialPercentage);
         } catch (err) {
           this.error("Failed to trigger virtual sun start event", err);
         }
@@ -766,6 +811,7 @@ module.exports = class VSun extends Homey.App {
         if (expired) {
           this._completedVirtualSuns.set(virtualSun.name, percentage);
           this._activeVirtualSuns.delete(id);
+          await this._triggerVirtualSunFinished(virtualSun.name, steppedPercentage);
           shouldSave = true;
         }
       }
@@ -894,7 +940,19 @@ module.exports = class VSun extends Homey.App {
   }
 
   _initVirtualSunAbortedTrigger() {
-    const triggerCard = this.homey.flow.getTriggerCard("virtual-sun-aborted");
+    this._initVirtualSunNameTrigger("virtual-sun-aborted");
+  }
+
+  _initVirtualSunStartedTrigger() {
+    this._initVirtualSunNameTrigger("virtual-sun-started");
+  }
+
+  _initVirtualSunFinishedTrigger() {
+    this._initVirtualSunNameTrigger("virtual-sun-finished");
+  }
+
+  _initVirtualSunNameTrigger(triggerCardId: string) {
+    const triggerCard = this.homey.flow.getTriggerCard(triggerCardId);
 
     triggerCard.registerRunListener(async (args: { name?: unknown }, state: { name: string }) => {
       return this._toVirtualSunName(args.name) === state.name;
