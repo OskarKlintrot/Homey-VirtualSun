@@ -102,7 +102,39 @@ module.exports = class VSun extends Homey.App {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  stopVirtualSunByName(virtualSunNameInput: unknown): boolean {
+  _getCurrentVirtualSunSteppedPercentage(virtualSun: VirtualSun, now: number): number {
+    const elapsed = Math.max(0, now - virtualSun.startTime);
+    let percentage: number;
+
+    if (elapsed >= virtualSun.durationMs) {
+      percentage = virtualSun.direction === "up" ? 100 : 0;
+    } else {
+      const progress = elapsed / virtualSun.durationMs;
+      const raw = virtualSun.direction === "up" ? progress * 100 : (1 - progress) * 100;
+      percentage = Math.round(raw * 10) / 10;
+    }
+
+    return snapPercentageToStep(
+      percentage,
+      virtualSun.direction,
+      virtualSun.step,
+    );
+  }
+
+  async _triggerVirtualSunAborted(name: string, steppedPercentage: number): Promise<void> {
+    const triggerCard = this.homey.flow.getTriggerCard("virtual-sun-aborted");
+
+    try {
+      await triggerCard.trigger(
+        { value: toFlowPercentageValue(steppedPercentage) },
+        { name },
+      );
+    } catch (err) {
+      this.error("Failed to trigger virtual sun aborted event", err);
+    }
+  }
+
+  async stopVirtualSunByName(virtualSunNameInput: unknown): Promise<boolean> {
     const virtualSunName = this._parseVirtualSunName(virtualSunNameInput);
     if (virtualSunName === null) {
       return false;
@@ -113,15 +145,34 @@ module.exports = class VSun extends Homey.App {
       return false;
     }
 
+    const virtualSun = this._activeVirtualSuns.get(id);
+    if (!virtualSun) {
+      return false;
+    }
+
+    const steppedPercentage = this._getCurrentVirtualSunSteppedPercentage(virtualSun, Date.now());
+
     this._activeVirtualSuns.delete(id);
     this._saveVirtualSunsToStorage();
+
+    await this._triggerVirtualSunAborted(virtualSun.name, steppedPercentage);
     return true;
   }
 
-  stopAllVirtualSuns(): number {
-    const count = this._activeVirtualSuns.size;
+  async stopAllVirtualSuns(): Promise<number> {
+    const activeVirtualSuns = Array.from(this._activeVirtualSuns.values()).map((virtualSun) => ({
+      name: virtualSun.name,
+      steppedPercentage: this._getCurrentVirtualSunSteppedPercentage(virtualSun, Date.now()),
+    }));
+    const count = activeVirtualSuns.length;
+
     this._activeVirtualSuns.clear();
     this._saveVirtualSunsToStorage();
+
+    for (const virtualSun of activeVirtualSuns) {
+      await this._triggerVirtualSunAborted(virtualSun.name, virtualSun.steppedPercentage);
+    }
+
     return count;
   }
 
@@ -277,6 +328,7 @@ module.exports = class VSun extends Homey.App {
     this._initGetVirtualSunValue();
     this._initVirtualSunIsActiveCondition();
     this._initVirtualSunStopAction();
+    this._initVirtualSunAbortedTrigger();
   }
 
   async onUninit() {
@@ -497,6 +549,19 @@ module.exports = class VSun extends Homey.App {
 
     for (const virtualSun of this._activeVirtualSuns.values()) {
       names.add(virtualSun.name);
+    }
+
+    try {
+      const abortedTriggerCard = this.homey.flow.getTriggerCard("virtual-sun-aborted");
+      const abortedTriggerArgs = (await abortedTriggerCard.getArgumentValues()) as Array<{ name?: unknown }>;
+      for (const args of abortedTriggerArgs) {
+        const name = this._parseVirtualSunName(args.name);
+        if (name !== null) {
+          names.add(name);
+        }
+      }
+    } catch (err) {
+      this.error("Failed to read virtual-sun-aborted arguments", err);
     }
 
     try {
@@ -823,8 +888,29 @@ module.exports = class VSun extends Homey.App {
       }
 
       this._knownVirtualSunNames.add(virtualSunName);
-      this.stopVirtualSunByName(virtualSunName);
+      await this.stopVirtualSunByName(virtualSunName);
       return true;
+    });
+  }
+
+  _initVirtualSunAbortedTrigger() {
+    const triggerCard = this.homey.flow.getTriggerCard("virtual-sun-aborted");
+
+    triggerCard.registerRunListener(async (args: { name?: unknown }, state: { name: string }) => {
+      return this._toVirtualSunName(args.name) === state.name;
+    });
+
+    triggerCard.registerArgumentAutocompleteListener("name", async (query: string) => {
+      const normalizedQuery = query.trim().toLowerCase();
+      const names = await this._collectVirtualSunNames();
+      const matchingNames = names
+        .filter((name) => normalizedQuery === "" || name.toLowerCase().includes(normalizedQuery))
+        .map((name) => ({
+          id: name,
+          name,
+        }));
+
+      return matchingNames;
     });
   }
 };

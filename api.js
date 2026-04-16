@@ -15,7 +15,7 @@ module.exports = {
 
   async stopVirtualSun({ homey, params }) {
     const decodedName = decodeURIComponent(params.name || "");
-    const stopped = homey.app.stopVirtualSunByName(decodedName);
+    const stopped = await homey.app.stopVirtualSunByName(decodedName);
 
     return {
       stopped,
@@ -23,7 +23,7 @@ module.exports = {
   },
 
   async stopAllVirtualSuns({ homey }) {
-    const stoppedCount = homey.app.stopAllVirtualSuns();
+    const stoppedCount = await homey.app.stopAllVirtualSuns();
 
     return {
       stoppedCount,

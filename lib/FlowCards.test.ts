@@ -49,6 +49,22 @@ describe("flow cards", () => {
     expect(valueToken.type).toBe("number");
   });
 
+  it("virtual-sun-aborted has virtual sun picker and value token", () => {
+    const card = readJson(".homeycompose/flow/triggers/virtual-sun-aborted.json");
+
+    expect(card.id).toBe("virtual-sun-aborted");
+    expect(card.titleFormatted.en).toContain("[[name]]");
+
+    const virtualSunArg = card.args.find((arg: any) => arg.name === "name");
+    expect(virtualSunArg).toBeDefined();
+    expect(virtualSunArg.type).toBe("autocomplete");
+
+    expect(Array.isArray(card.tokens)).toBe(true);
+    const valueToken = card.tokens.find((token: any) => token.name === "value");
+    expect(valueToken).toBeDefined();
+    expect(valueToken.type).toBe("number");
+  });
+
   it("get-virtual-sun-value has virtual sun picker and value token", () => {
     const card = readJson(".homeycompose/flow/actions/get-virtual-sun-value.json");
 

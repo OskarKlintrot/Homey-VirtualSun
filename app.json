@@ -121,6 +121,37 @@
         ]
       },
       {
+        "id": "virtual-sun-aborted",
+        "title": {
+          "en": "Virtual sun aborted"
+        },
+        "titleFormatted": {
+          "en": "Virtual sun [[name]] aborted"
+        },
+        "args": [
+          {
+            "name": "name",
+            "type": "autocomplete",
+            "title": {
+              "en": "Virtual sun"
+            },
+            "placeholder": {
+              "en": "Pick a virtual sun"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "value",
+            "type": "number",
+            "title": {
+              "en": "Value (%)"
+            },
+            "example": 0.42
+          }
+        ]
+      },
+      {
         "id": "virtual-sun-value-changed",
         "title": {
           "en": "Virtual sun changed"
