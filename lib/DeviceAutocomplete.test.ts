@@ -1,7 +1,7 @@
 const { autocompleteDevices } = require("./DeviceAutocomplete.ts");
 
 describe("autocompleteDevices", () => {
-  it("returns dimmable light devices grouped by room and sorted by room then name", async () => {
+  it("returns dimmable light devices with room-prefixed display names sorted by room then name", async () => {
     const homeyAPI = {
       devices: {
         getDevices: jest.fn().mockResolvedValue({
@@ -21,9 +21,9 @@ describe("autocompleteDevices", () => {
     };
 
     await expect(autocompleteDevices(homeyAPI, "")).resolves.toEqual([
-      { id: "bedroom", name: "Bedroom Light", description: "Bedroom" },
-      { id: "island", name: "Island Light", description: "Kitchen" },
-      { id: "kitchen", name: "Kitchen Light", description: "Kitchen" },
+      { id: "bedroom", name: "Bedroom / Bedroom Light", description: "Bedroom" },
+      { id: "island", name: "Kitchen / Island Light", description: "Kitchen" },
+      { id: "kitchen", name: "Kitchen / Kitchen Light", description: "Kitchen" },
     ]);
   });
 
@@ -44,7 +44,7 @@ describe("autocompleteDevices", () => {
     };
 
     await expect(autocompleteDevices(homeyAPI, "kit")).resolves.toEqual([
-      { id: "kitchen", name: "Kitchen Light", description: "Kitchen" },
+      { id: "kitchen", name: "Kitchen / Kitchen Light", description: "Kitchen" },
     ]);
   });
 
@@ -65,7 +65,7 @@ describe("autocompleteDevices", () => {
     };
 
     await expect(autocompleteDevices(homeyAPI, "hall")).resolves.toEqual([
-      { id: "hallway", name: "Wall Lamp", description: "Hallway" },
+      { id: "hallway", name: "Hallway / Wall Lamp", description: "Hallway" },
     ]);
   });
 
