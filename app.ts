@@ -1,12 +1,14 @@
 "use strict";
 
 import Homey from "homey";
+const { HomeyAPI } = require("homey-api");
 import {
   computeSunValue,
   normalizeDirection,
   parseTimeToMinutes,
   SunDirection,
 } from "./lib/SunValue.ts";
+import { autocompleteDevices } from "./lib/DeviceAutocomplete.js";
 import { virtualSunValueToRange, snapPercentageToStep } from "./lib/VirtualSun.ts";
 
 const POLL_INTERVAL_MS = 1000;
@@ -59,6 +61,11 @@ module.exports = class VSun extends Homey.App {
   private _knownVirtualSunNames: Set<string> = new Set();
   private _virtualSunIdCounter: number = 0;
   private _virtualSunPollTimer: NodeJS.Timeout | null = null;
+  private _homeyAPI: any = null;
+  private _deviceDimCapabilityInstances: Map<string, any> = new Map();
+  private _deviceDimTimestamps: Map<string, number[]> = new Map();
+  private _deviceDimLastTriggeredAt: Map<string, number> = new Map();
+  private _deviceDimEventQueues: Map<string, Promise<void>> = new Map();
 
   _findActiveVirtualSunIdByName(virtualSunName: string): string | null {
     for (const [id, virtualSun] of this._activeVirtualSuns) {
@@ -335,6 +342,13 @@ module.exports = class VSun extends Homey.App {
     } catch (err) {
       this._timeZone = undefined;
     }
+
+    try {
+      this._homeyAPI = await HomeyAPI.createAppAPI({ homey: this.homey });
+    } catch (err) {
+      this.error("Failed to initialize HomeyAPI", err);
+      this._homeyAPI = null;
+    }
     
     this._loadVirtualSunsFromStorage();
     
@@ -347,6 +361,7 @@ module.exports = class VSun extends Homey.App {
     this._initVirtualSunAbortedTrigger();
     this._initVirtualSunStartedTrigger();
     this._initVirtualSunFinishedTrigger();
+    this._initDeviceDimmedRapidlyTrigger();
   }
 
   async onUninit() {
@@ -358,6 +373,15 @@ module.exports = class VSun extends Homey.App {
       clearInterval(this._virtualSunPollTimer);
       this._virtualSunPollTimer = null;
     }
+
+    for (const capabilityInstance of this._deviceDimCapabilityInstances.values()) {
+      try {
+        capabilityInstance?.destroy?.();
+      } catch (err) {
+        this.error("Failed to destroy device dim capability instance", err);
+      }
+    }
+    this._deviceDimCapabilityInstances.clear();
     
     this._saveVirtualSunsToStorage();
   }
@@ -949,6 +973,241 @@ module.exports = class VSun extends Homey.App {
 
   _initVirtualSunFinishedTrigger() {
     this._initVirtualSunNameTrigger("virtual-sun-finished");
+  }
+
+  _initDeviceDimmedRapidlyTrigger() {
+    const triggerCard = this.homey.flow.getTriggerCard("device-dimmed-rapidly");
+
+    if (!triggerCard) {
+      return;
+    }
+
+    if (typeof triggerCard.registerArgumentAutocompleteListener === "function") {
+      triggerCard.registerArgumentAutocompleteListener("device", async (query: string) => {
+        return autocompleteDevices(this._homeyAPI, query);
+      });
+    }
+
+    triggerCard.registerRunListener(async (args: {
+      device?: unknown;
+      events?: unknown;
+      duration?: unknown;
+      cooldown?: unknown;
+    }, state: {
+      deviceId: string;
+      events: number;
+      duration: number;
+      cooldown: number;
+    }) => {
+      const deviceId = typeof args.device === "string"
+        ? args.device
+        : (typeof args.device === "object" && args.device !== null && (args.device as { id?: unknown }).id)
+          ? String((args.device as { id: unknown }).id)
+          : null;
+
+      const events = typeof args.events === "number" ? args.events : state.events;
+      const duration = typeof args.duration === "number" ? args.duration : state.duration;
+      const cooldown = typeof args.cooldown === "number" ? args.cooldown : state.cooldown;
+
+      return deviceId === state.deviceId
+        && events === state.events
+        && duration === state.duration
+        && cooldown === state.cooldown;
+    });
+
+    void this._setupDeviceDimListeners();
+  }
+
+  private _extractAutocompleteDeviceId(value: unknown): string | null {
+    if (typeof value === "string" && value !== "") {
+      return value;
+    }
+
+    if (typeof value === "object" && value !== null && "id" in value) {
+      const id = (value as { id?: unknown }).id;
+      return typeof id === "string" && id !== "" ? id : null;
+    }
+
+    return null;
+  }
+
+  private _normalizeRapidDimNumber(value: unknown, defaultValue: number, minValue: number): number {
+    const numericValue = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(numericValue) && numericValue >= minValue ? numericValue : defaultValue;
+  }
+
+  private async _getDeviceRapidDimTriggerConfigs(): Promise<Array<{
+    deviceId: string;
+    events: number;
+    duration: number;
+    cooldown: number;
+  }>> {
+    const triggerCard = this.homey.flow.getTriggerCard("device-dimmed-rapidly");
+    if (!triggerCard || typeof triggerCard.getArgumentValues !== "function") {
+      return [];
+    }
+
+    try {
+      const argumentValues = await triggerCard.getArgumentValues() as Array<{
+        device?: unknown;
+        events?: unknown;
+        duration?: unknown;
+        cooldown?: unknown;
+      }>;
+
+      return argumentValues
+        .map((args) => {
+          const deviceId = this._extractAutocompleteDeviceId(args.device);
+          if (!deviceId) {
+            return null;
+          }
+
+          return {
+            deviceId,
+            events: this._normalizeRapidDimNumber(args.events, 5, 1),
+            duration: this._normalizeRapidDimNumber(args.duration, 1, 0.1),
+            cooldown: this._normalizeRapidDimNumber(args.cooldown, 10, 0),
+          };
+        })
+        .filter((config): config is {
+          deviceId: string;
+          events: number;
+          duration: number;
+          cooldown: number;
+        } => config !== null);
+    } catch (err) {
+      this.error("Failed to read device-dimmed-rapidly arguments", err);
+      return [];
+    }
+  }
+
+  private async _setupDeviceDimListeners(): Promise<void> {
+    if (!this._homeyAPI?.devices?.getDevices) {
+      return;
+    }
+
+    try {
+      const devices = await this._homeyAPI.devices.getDevices();
+      for (const device of Object.values(devices) as any[]) {
+        if (!device?.id || !device?.capabilities?.includes("dim") || device?.class !== "light") {
+          continue;
+        }
+
+        this._addDeviceDimListener(device);
+      }
+    } catch (err) {
+      this.error("Failed to set up device dim listeners", err);
+    }
+  }
+
+  private _addDeviceDimListener(device: any): void {
+    const deviceId = typeof device?.id === "string" ? device.id : null;
+    if (!deviceId || this._deviceDimCapabilityInstances.has(deviceId)) {
+      return;
+    }
+
+    if (typeof device.makeCapabilityInstance !== "function") {
+      return;
+    }
+
+    try {
+      const capabilityInstance = device.makeCapabilityInstance("dim", async () => {
+        await this._queueDeviceDimEvent(device);
+      });
+
+      this._deviceDimCapabilityInstances.set(deviceId, capabilityInstance);
+    } catch (err) {
+      this.error(`Failed to create dim capability instance for ${deviceId}`, err);
+    }
+  }
+
+  private async _queueDeviceDimEvent(device: any): Promise<void> {
+    const deviceId = typeof device?.id === "string" ? device.id : null;
+    if (!deviceId) {
+      return;
+    }
+
+    const currentQueue = this._deviceDimEventQueues.get(deviceId) ?? Promise.resolve();
+    const nextQueue = currentQueue
+      .catch(() => undefined)
+      .then(async () => {
+        await this._handleDeviceDimEvent(device);
+      })
+      .finally(() => {
+        if (this._deviceDimEventQueues.get(deviceId) === nextQueue) {
+          this._deviceDimEventQueues.delete(deviceId);
+        }
+      });
+
+    this._deviceDimEventQueues.set(deviceId, nextQueue);
+    await nextQueue;
+  }
+
+  private async _handleDeviceDimEvent(device: any): Promise<void> {
+    const deviceId = typeof device?.id === "string" ? device.id : null;
+    if (!deviceId) {
+      return;
+    }
+
+    const configs = (await this._getDeviceRapidDimTriggerConfigs())
+      .filter((config) => config.deviceId === deviceId);
+
+    if (configs.length === 0) {
+      return;
+    }
+
+    const now = Date.now();
+    const maxDurationMs = Math.max(...configs.map((config) => config.duration * 1000));
+    const timestamps = [
+      ...(this._deviceDimTimestamps.get(deviceId) ?? []),
+      now,
+    ].filter((timestamp) => timestamp > now - maxDurationMs);
+    this._deviceDimTimestamps.set(deviceId, timestamps);
+
+    const triggerCard = this.homey.flow.getTriggerCard("device-dimmed-rapidly");
+    if (!triggerCard) {
+      return;
+    }
+
+    let didTrigger = false;
+
+    for (const config of configs) {
+      const matchingTimestamps = timestamps.filter((timestamp) => timestamp > now - (config.duration * 1000));
+      const stateKey = `${deviceId}|${config.events}|${config.duration}|${config.cooldown}`;
+      const lastTriggeredAt = this._deviceDimLastTriggeredAt.get(stateKey) ?? 0;
+
+      if (matchingTimestamps.length < config.events) {
+        continue;
+      }
+
+      if (now - lastTriggeredAt < config.cooldown * 1000) {
+        continue;
+      }
+
+      this._deviceDimLastTriggeredAt.set(stateKey, now);
+      didTrigger = true;
+
+      try {
+        await triggerCard.trigger(
+          {
+            dimCount: matchingTimestamps.length,
+            device: typeof device?.name === "string" ? device.name : deviceId,
+          },
+          {
+            deviceId,
+            events: config.events,
+            duration: config.duration,
+            cooldown: config.cooldown,
+          },
+        );
+      } catch (err) {
+        this.error(`Failed to trigger device-dimmed-rapidly for ${deviceId}`, err);
+      }
+    }
+
+    if (didTrigger) {
+      this._deviceDimTimestamps.set(deviceId, []);
+    }
   }
 
   _initVirtualSunNameTrigger(triggerCardId: string) {

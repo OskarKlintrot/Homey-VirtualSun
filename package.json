@@ -6,6 +6,9 @@
     "lint": "eslint --ext .js,.ts --ignore-path .gitignore .",
     "test": "jest"
   },
+  "dependencies": {
+    "homey-api": "^3.14.1"
+  },
   "jest": {
     "testEnvironment": "node",
     "testMatch": [

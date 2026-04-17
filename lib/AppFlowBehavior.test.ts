@@ -1,7 +1,7 @@
 'use strict';
 
 type RunListener = (args: any, state?: any) => Promise<any>;
-type AutocompleteListener = (query: string) => Promise<Array<{ id: string; name: string }>>;
+type AutocompleteListener = (query: string) => Promise<Array<{ id: string; name: string; description?: string }>>;
 
 class MockFlowCard {
   id: string;
@@ -49,6 +49,7 @@ jest.mock('homey', () => {
 
 jest.mock('../lib/SunValue.js', () => jest.requireActual('./SunValue'), { virtual: true });
 jest.mock('../lib/VirtualSun.js', () => jest.requireActual('./VirtualSun'), { virtual: true });
+jest.mock('../lib/DeviceAutocomplete.js', () => jest.requireActual('./DeviceAutocomplete'), { virtual: true });
 
 const VSun = require('../app.ts');
 

@@ -1,0 +1,81 @@
+{
+  "id": "device-dimmed-rapidly",
+  "title": {
+    "en": "Device dimmed rapidly"
+  },
+  "titleFormatted": {
+    "en": "[[device]] changed dim level at least [[events]] times within [[duration]] s • cool down [[cooldown]] s"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "autocomplete",
+      "title": {
+        "en": "Device"
+      },
+      "placeholder": {
+        "en": "Pick a device"
+      }
+    },
+    {
+      "name": "events",
+      "type": "number",
+      "title": {
+        "en": "Number of dimming events"
+      },
+      "value": 5,
+      "min": 1,
+      "max": 100,
+      "step": 1,
+      "placeholder": {
+        "en": "5"
+      }
+    },
+    {
+      "name": "duration",
+      "type": "number",
+      "title": {
+        "en": "Duration (seconds)"
+      },
+      "value": 1,
+      "min": 0.1,
+      "max": 60,
+      "step": 0.1,
+      "placeholder": {
+        "en": "1"
+      }
+    },
+    {
+      "name": "cooldown",
+      "type": "number",
+      "title": {
+        "en": "Cool down (seconds)"
+      },
+      "value": 10,
+      "min": 0,
+      "max": 300,
+      "step": 1,
+      "placeholder": {
+        "en": "10"
+      }
+    }
+  ],
+  "tokens": [
+    {
+      "name": "dimCount",
+      "type": "number",
+      "title": {
+        "en": "Number of dims"
+      },
+      "example": 5
+    },
+    {
+      "name": "device",
+      "type": "string",
+      "title": {
+        "en": "Device name"
+      },
+      "example": "Bedroom Light"
+    }
+  ]
+}
