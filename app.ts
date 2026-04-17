@@ -999,11 +999,7 @@ module.exports = class VSun extends Homey.App {
       duration: number;
       cooldown: number;
     }) => {
-      const deviceId = typeof args.device === "string"
-        ? args.device
-        : (typeof args.device === "object" && args.device !== null && (args.device as { id?: unknown }).id)
-          ? String((args.device as { id: unknown }).id)
-          : null;
+      const deviceId = this._extractAutocompleteDeviceId(args.device);
 
       const events = typeof args.events === "number" ? args.events : state.events;
       const duration = typeof args.duration === "number" ? args.duration : state.duration;

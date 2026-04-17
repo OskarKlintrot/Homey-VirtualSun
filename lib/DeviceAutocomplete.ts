@@ -54,10 +54,9 @@ export async function autocompleteDevices(
       .filter((device: any) => device?.capabilities?.includes("dim") && device?.class === "light")
       .map((device: any) => {
         const description = getZonePath(device?.zone, zones);
-        const deviceName = typeof device?.name === "string" ? device.name : "";
         return {
           id: device?.id,
-          name: description ? `${description} / ${deviceName}` : deviceName,
+          name: typeof device?.name === "string" ? device.name : "",
           description: description ?? undefined,
         };
       })
