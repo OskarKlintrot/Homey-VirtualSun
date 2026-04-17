@@ -2,9 +2,11 @@
   "extends": "@tsconfig/node16/tsconfig.json",
   "compilerOptions": {
     "allowJs": true,
+    "rootDir": ".",
     "outDir": ".homeybuild/",
     "types": ["node", "jest"],
     "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true
+    "rewriteRelativeImportExtensions": true,
+    "isolatedModules": true
   }
 }

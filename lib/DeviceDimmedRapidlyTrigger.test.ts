@@ -23,7 +23,7 @@ jest.mock("../lib/DeviceAutocomplete.js", () => ({
   autocompleteDevices: (...args: unknown[]) => autocompleteDevicesMock(...args),
 }), { virtual: true });
 
-const VSun = require("../app.ts");
+const VirtualSunApp = require("../app.ts");
 
 describe("device-dimmed-rapidly trigger", () => {
   beforeEach(() => {
@@ -36,7 +36,7 @@ describe("device-dimmed-rapidly trigger", () => {
       registerRunListener: jest.fn(),
     };
 
-    const app = new VSun();
+    const app = new VirtualSunApp();
     app.homey = {
       flow: {
         getTriggerCard: jest.fn().mockReturnValue(triggerCard),
@@ -57,7 +57,7 @@ describe("device-dimmed-rapidly trigger", () => {
   });
 
   it("does nothing when the trigger card is unavailable", () => {
-    const app = new VSun();
+    const app = new VirtualSunApp();
     app.homey = {
       flow: {
         getTriggerCard: jest.fn().mockReturnValue(null),
