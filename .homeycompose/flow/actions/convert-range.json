@@ -1,10 +1,10 @@
 {
   "id": "convert-range",
   "title": {
-    "en": "Convert value from 100->0 (%) to x->y (%)"
+    "en": "Convert value from 0->100 (%) to y->x (%)"
   },
   "titleFormatted": {
-    "en": "Convert [[input]]% to range between [[x]] and [[y]]"
+    "en": "Convert [[input]]% to range between [[y]] and [[x]]"
   },
   "args": [
     {
@@ -24,7 +24,7 @@
       "name": "x",
       "type": "range",
       "title": {
-        "en": "X at 100%"
+        "en": "Y at 100"
       },
       "value": 1,
       "min": 0,
@@ -38,7 +38,7 @@
       "name": "y",
       "type": "range",
       "title": {
-        "en": "Y at 0%"
+        "en": "X at 0"
       },
       "value": 0,
       "min": 0,
